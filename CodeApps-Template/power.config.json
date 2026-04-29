@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "Code Apps Template",
+  "region": "prod",
+  "environmentId": "b52623c0-9983-ef09-a54b-cc999db65b12",
+  "description": "",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "41b22b7c-1c8a-495e-b782-fb402385fe76": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+      "displayName": "Office 365 Outlook",
+      "dataSources": [
+        "office365"
+      ],
+      "dataSets": {}
+    },
+    "34f5f16d-2b00-4921-94ca-f731a83baa22": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+      "displayName": "Office 365 Users",
+      "dataSources": [
+        "office365users"
+      ],
+      "dataSets": {}
+    },
+    "4c947527-c82e-4c5c-aa2c-4cb58caad693": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_teams",
+      "displayName": "Microsoft Teams",
+      "dataSources": [
+        "teams"
+      ],
+      "dataSets": {}
+    },
+    "1c6f2cc0-b63b-446d-892f-6aedd7e20bbd": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+      "displayName": "SharePoint",
+      "dataSources": [
+        "globalcountryholidays"
+      ],
+      "dataSets": {
+        "https://m365x27212534.sharepoint.com/sites/HumanResources": {
+          "dataSources": {
+            "globalcountryholidays": {
+              "tableName": "Global Country Holidays"
+            }
+          }
+        }
+      }
+    }
+  },
+  "databaseReferences": {
+    "default.cds": {
+      "dataSources": {
+        "accounts": {
+          "entitySetName": "accounts",
+          "logicalName": "account"
+        },
+        "contacts": {
+          "entitySetName": "contacts",
+          "logicalName": "contact"
+        }
+      },
+      "environmentVariableName": ""
+    }
+  }
+}
