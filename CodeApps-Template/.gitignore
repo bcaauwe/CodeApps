@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+## Code Apps paths
+.power
+power.config.json
+src/generated
