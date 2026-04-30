@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { makeStyles, shorthands, tokens, Button, Breadcrumb, BreadcrumbItem, BreadcrumbDivider, Text, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem } from '@fluentui/react-components'
-import { HomeRegular, HomeFilled, NavigationRegular, PeopleRegular, PeopleFilled, WeatherMoonRegular, WeatherSunnyRegular, ColorRegular, MoreVerticalRegular, MailRegular, MailFilled } from '@fluentui/react-icons'
+import { HomeRegular, HomeFilled, NavigationRegular, PeopleRegular, PeopleFilled, WeatherMoonRegular, WeatherSunnyRegular, ColorRegular, MoreVerticalRegular, MailRegular, MailFilled, VideoRegular, VideoFilled } from '@fluentui/react-icons'
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTheme } from '../hooks/useTheme'
@@ -366,12 +366,20 @@ const navItems: NavItem[] = [
     icon: <PeopleRegular />,
     iconFilled: <PeopleFilled />,
   },
+  {
+    path: '/tmdb',
+    label: 'Movie Database',
+    description: 'Use custom connectors to browse movies through a custom API',
+    icon: <VideoRegular />,
+    iconFilled: <VideoFilled />,
+  },
 ]
 
 const routeNames: Record<string, string> = {
   '/': 'Home',
   '/office365': 'Office 365',
   '/customers': 'Customers',
+  '/tmdb': 'Movie Database',
 }
 
 interface LayoutProps {
@@ -393,7 +401,6 @@ export default function Layout({ children }: LayoutProps) {
     const fetchUserProfile = async () => {
       try {
         const result = await Office365UsersService.MyProfile_V2('displayName,mail,userPrincipalName,mailNickname,id')
-        console.log('User profile result:', result)
         
         // Try multiple ways to extract the data from IOperationResult
         if (result) {
@@ -419,7 +426,6 @@ export default function Layout({ children }: LayoutProps) {
             if (profileData.id) {
               try {
                 const photoResult = await Office365UsersService.UserPhoto_V2(profileData.id)
-                console.log('User photo result:', photoResult)
                 if (photoResult) {
                   let photoData: string | null = null
                   

@@ -127,10 +127,32 @@ export function ContactEditPane({
     }
   }
 
-  const handleSave = () => {
-    if (formData) {
-      onSave(formData)
-      onOpenChange(false)
+  const handleSave = async () => {
+    if (formData && contact?.contactid) {
+      try {
+        // Get only the fields that have changed
+        const changedFields: Record<string, any> = {}
+        let hasChanges = false
+
+        for (const key in formData) {
+          if (key !== 'contactid' && key !== 'address1_addressid') {
+            if (formData[key as keyof Contacts] !== contact[key as keyof Contacts]) {
+              changedFields[key] = formData[key as keyof Contacts]
+              hasChanges = true
+            }
+          }
+        }
+
+        // Only update if there are actual changes
+        if (hasChanges) {
+          await ContactsService.update(contact.contactid, changedFields)
+        }
+
+        onSave(formData)
+        onOpenChange(false)
+      } catch (error) {
+        console.error('Failed to update contact:', error)
+      }
     }
   }
 

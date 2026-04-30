@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext } from 'react'
-import type { ReactNode, Theme } from '@fluentui/react-components'
+import type { ReactNode } from 'react'
+import type { Theme } from '@fluentui/react-components'
 import { webLightTheme, webDarkTheme } from '@fluentui/react-components'
 
 export interface ThemeContextType {
