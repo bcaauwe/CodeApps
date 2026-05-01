@@ -296,8 +296,8 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
     // Add markers for filtered accounts
     accountsToDisplay.forEach((account) => {
       if (mapRef.current && account.address1_latitude && account.address1_longitude) {
-        const lat = parseFloat(account.address1_latitude)
-        const lng = parseFloat(account.address1_longitude)
+        const lat = Number(account.address1_latitude)
+        const lng = Number(account.address1_longitude)
         
         // Get the marker icon color based on revenue
         const markerIcon = getMarkerColorByRevenue(account.revenue as any)

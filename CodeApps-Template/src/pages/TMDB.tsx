@@ -3,6 +3,7 @@ import { SearchRegular } from '@fluentui/react-icons';
 import { useState, useEffect } from 'react';
 import { TMDBService } from '../generated/services/TMDBService';
 import { useTheme } from '../hooks/useTheme';
+import { GetTMDBAPIKeyService } from '../generated/services/GetTMDBAPIKeyService';
 
 interface Movie {
   id: number;
@@ -155,19 +156,32 @@ export function TMDB() {
   const [sortLabel, setSortLabel] = useState('Popularity');
   const [config, setConfig] = useState<ConfigData | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
-
-  // Get API key from environment or use a placeholder
-  const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '586539aaebec57e1a339711bec5d2ae3';
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   useEffect(() => {
-    loadConfig();
+    const fetchApiKey = async () => {
+      const result = await GetTMDBAPIKeyService.Run({});
+
+      if (result.success && result.data) {
+        setApiKey(result.data.apikey ?? null);
+      } else {
+        console.error('Flow failed: ', result.error);
+      }
+    };
+    fetchApiKey();
   }, []);
 
   useEffect(() => {
-    if (configLoaded) {
+    if (apiKey) {
+      loadConfig();
+    }
+  }, [apiKey]);
+
+  useEffect(() => {
+    if (configLoaded && apiKey) {
       loadTrendingMovies();
     }
-  }, [configLoaded]);
+  }, [configLoaded, apiKey]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -187,7 +201,7 @@ export function TMDB() {
   const loadConfig = async () => {
     try {
       setError(null);
-      const result = await TMDBService.GetConfig(API_KEY);
+      const result = await TMDBService.GetConfig(apiKey!);
       
       if (result.success && result.data) {
         const configData = result.data as unknown as ConfigData;
@@ -207,7 +221,7 @@ export function TMDB() {
       setLoading(true);
       setError(null);
 
-      const result = await TMDBService.GetTrending('week', API_KEY);
+      const result = await TMDBService.GetTrending('week', apiKey!);
 
       if (result.success && result.data) {
         const data = result.data as unknown as { results: Movie[] };
@@ -231,7 +245,7 @@ export function TMDB() {
       setLoading(true);
       setError(null);
 
-      const result = await TMDBService.MovieQuery(API_KEY, searchQuery.trim());
+      const result = await TMDBService.MovieQuery(apiKey!, searchQuery.trim());
 
       if (result.success && result.data) {
         const data = result.data as unknown as { results: Movie[] };
@@ -409,7 +423,7 @@ export function TMDB() {
               ❌ {error}
             </Text>
             <Text className={styles.noResultsText}>
-              Make sure your TMDB API key is configured. Set VITE_TMDB_API_KEY environment variable.
+              Make sure the "gbb_tmdb_apikey" environment variable is configured in your Power Platform environment.
             </Text>
             <Button
               onClick={loadTrendingMovies}
