@@ -1,75 +1,105 @@
-# React + TypeScript + Vite
+# Code Apps Demo Template
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This template provides a minimal setup to get a Code App running for demonstration with live data sources.
 
-It is preconfigured to work with Power Apps Code Apps.
+## Prerequisites
 
-Currently, two official plugins are available:
+- Node.js >= 22
+- A Power Platform environment with Dataverse enabled
+- Connections configured for:
+  - Office 365 Outlook
+  - Office 365 Users
+  - Dataverse
+  - TMDB (custom connector)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Getting Started
 
-## React Compiler
+### 1. Initialize the Code App
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Clone this repository, navigate to the project folder, and install dependencies:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd CodeApps-Template
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+If starting from scratch (empty folder), initialize a new Code App project:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npx power-apps init
 ```
+
+### 2a. Add Data Sources - Office 365 Sources
+
+Run the following commands from the project root to add each data source. The CLI will prompt you interactively to select your connection and configure options.
+
+#### Office 365 Outlook
+
+```bash
+npx power-apps add-data-source --api-id shared_office365 --connection-id <your-office365outlook-connectionid>
+```
+
+#### Office 365 Users
+
+```bash
+npx power-apps add-data-source --api-id shared_office365users --connection-id <your-office365users-connectionid>
+```
+
+#### Microsoft Teams
+
+```bash
+npx power-apps add-data-source --api-id shared_teams --connection-id <your-teams-connectionid>
+```
+
+#### Microsoft SharePoint - Global Country Holidays
+
+```bash
+npx power-apps add-data-source --api-id shared_sharepointonline --connection-id <your-sharepoint-connectionid> --dataset <your-sharepoint-site-url> --resource-name <your-sharepoint-list-name>
+```
+
+### 2b. Add Data Sources - Dataverse
+
+Run the following commands from the project root to add each Dataverse table. When connecting to Dataverse you will need your organization url (e.g. https://org***.crm.dynamics.com)
+
+#### Dataverse — Account table
+
+```bash
+npx power-apps add-data-source --api-id dataverse --resource-name account --org-url <your-org-url>
+```
+
+#### Dataverse — Contact table
+
+```bash
+npx power-apps add-data-source --api-id dataverse --resource-name contact --org-url <your-org-url>
+```
+
+### 2c. Add Data Sources - Custom Connectors
+
+Run the following commands from the project root to add each custom conncetor. 
+
+#### TMDB
+
+For custom connectors, you will need the API ID of your TMDB custom connector. 
+
+```bash
+npx power-apps add-data-source --api-id <your-tmdb-custom-connector-api-id> --connection-id <your-tmdb-connectionid>
+```
+
+### 3. Run Locally
+
+Start the development server:
+
+```bash
+npx power-apps run
+```
+
+This launches the app at `http://localhost:3000` with live connections to your Power Platform data sources.
+
+### 4. Push to Power Platform
+
+When ready to deploy:
+
+```bash
+npx power-apps push
+```
+
