@@ -9,6 +9,8 @@ This template provides a minimal setup to get a Code App running for demonstrati
 - Connections configured for:
   - Office 365 Outlook
   - Office 365 Users
+  - Microsoft Teams
+  - SharePoint Online
   - Dataverse
   - TMDB (custom connector)
 
