@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { makeStyles, shorthands, tokens, Button, Breadcrumb, BreadcrumbItem, BreadcrumbDivider, Text, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem } from '@fluentui/react-components'
-import { HomeRegular, HomeFilled, NavigationRegular, PeopleRegular, PeopleFilled, WeatherMoonRegular, WeatherSunnyRegular, ColorRegular, MoreVerticalRegular, MailRegular, MailFilled, VideoRegular, VideoFilled } from '@fluentui/react-icons'
+import { HomeRegular, HomeFilled, NavigationRegular, PeopleRegular, PeopleFilled, WeatherMoonRegular, WeatherSunnyRegular, ColorRegular, MoreVerticalRegular, MailRegular, MailFilled, VideoRegular, VideoFilled} from '@fluentui/react-icons'
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTheme } from '../hooks/useTheme'

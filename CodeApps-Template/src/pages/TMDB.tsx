@@ -4,24 +4,9 @@ import { useState, useEffect } from 'react';
 import { TMDBService } from '../generated/services/TMDBService';
 import { useTheme } from '../hooks/useTheme';
 import { GetTMDBAPIKeyService } from '../generated/services/GetTMDBAPIKeyService';
-
-interface Movie {
-  id: number;
-  title: string;
-  poster_path: string;
-  overview: string;
-  release_date: string;
-  popularity: number;
-  vote_average: number;
-}
-
-interface ConfigData {
-  images?: {
-    base_url: string;
-    secure_base_url: string;
-    poster_sizes: string[];
-  };
-}
+import MovieDetailsModal from '../components/MovieDetailsModal';
+import PersonMoviesModal from '../components/PersonMoviesModal';
+import type { Movie, CastMember, Video, PersonMovie, PersonPhoto, PersonInfo, ConfigData } from '../types/TMDBTypes';
 
 type SortOption = 'popularity' | 'release_date' | 'title_asc' | 'title_desc';
 
@@ -157,6 +142,17 @@ export function TMDB() {
   const [config, setConfig] = useState<ConfigData | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [movieCast, setMovieCast] = useState<CastMember[]>([]);
+  const [movieVideos, setMovieVideos] = useState<Video[]>([]);
+  const [castLoading, setCastLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPersonName, setSelectedPersonName] = useState<string | null>(null);
+  const [selectedPersonInfo, setSelectedPersonInfo] = useState<PersonInfo | null>(null);
+  const [personMovies, setPersonMovies] = useState<PersonMovie[]>([]);
+  const [personPhotos, setPersonPhotos] = useState<PersonPhoto[]>([]);
+  const [personMoviesLoading, setPersonMoviesLoading] = useState(false);
+  const [personMoviesModalOpen, setPersonMoviesModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchApiKey = async () => {
@@ -335,6 +331,99 @@ export function TMDB() {
     }
   };
 
+  const loadMovieCast = async (movieId: number) => {
+    try {
+      setCastLoading(true);
+      const result = await TMDBService.MovieInfo(movieId.toString(), apiKey!, 'credits,videos', 'en-US');
+
+      if (result.success && result.data) {
+        const data = result.data as unknown as { credits?: { cast?: CastMember[] }; videos?: { results?: Video[] } };
+        const cast = data.credits?.cast || [];
+        const videos = data.videos?.results?.filter((v: Video) => v.site === 'YouTube') || [];
+        setMovieCast(cast);
+        setMovieVideos(videos);
+      } else {
+        setMovieCast([]);
+        setMovieVideos([]);
+      }
+    } catch (err) {
+      console.error('Error loading cast:', err);
+      setMovieCast([]);
+      setMovieVideos([]);
+    } finally {
+      setCastLoading(false);
+    }
+  };
+
+  const loadPersonMovies = async (personId: number, personName: string) => {
+    try {
+      setModalOpen(false);
+      setSelectedPersonName(personName);
+      setPersonMoviesLoading(true);
+      setPersonMoviesModalOpen(true);
+
+      const result = await TMDBService.PersonInfo(personId.toString(), apiKey!, 'movie_credits,images');
+
+      if (result.success && result.data) {
+        const data = result.data as unknown as {
+          movie_credits?: { cast?: PersonMovie[] };
+          images?: { profiles?: PersonPhoto[] };
+          biography?: string;
+          birthday?: string;
+          place_of_birth?: string;
+          profile_path?: string | null;
+        };
+        const movies = data.movie_credits?.cast || [];
+        const photos = data.images?.profiles || [];
+
+        const personInfo: PersonInfo = {
+          name: personName,
+          biography: data.biography || undefined,
+          birthday: data.birthday || undefined,
+          place_of_birth: data.place_of_birth || undefined,
+          profile_path: data.profile_path || undefined,
+        };
+        setSelectedPersonInfo(personInfo);
+
+        const sortedMovies = movies.sort((a, b) => {
+          const dateA = new Date(a.release_date || '').getTime();
+          const dateB = new Date(b.release_date || '').getTime();
+          return dateB - dateA;
+        });
+
+        setPersonMovies(sortedMovies);
+        setPersonPhotos(photos);
+      } else {
+        setPersonMovies([]);
+        setPersonPhotos([]);
+        setSelectedPersonInfo(null);
+      }
+    } catch (err) {
+      console.error('Error loading person movies:', err);
+      setPersonMovies([]);
+      setPersonPhotos([]);
+      setSelectedPersonInfo(null);
+    } finally {
+      setPersonMoviesLoading(false);
+    }
+  };
+
+  const handleMovieClick = async (movie: Movie) => {
+    setSelectedMovie(movie);
+    setModalOpen(true);
+    await loadMovieCast(movie.id);
+  };
+
+  const handleMovieFromPersonClick = async (movieId: number) => {
+    const movieToOpen = personMovies.find(m => m.id === movieId) as unknown as Movie;
+    if (movieToOpen) {
+      setPersonMoviesModalOpen(false);
+      setSelectedMovie(movieToOpen);
+      setModalOpen(true);
+      await loadMovieCast(movieToOpen.id);
+    }
+  };
+
   const controlsStyle = {
     backgroundColor: isDarkMode ? tokens.colorNeutralBackground2 : tokens.colorNeutralBackground2,
     color: tokens.colorNeutralForeground1,
@@ -444,7 +533,7 @@ export function TMDB() {
           </h3>
           <div className={styles.moviesGrid}>
             {filteredMovies.map((movie) => (
-              <Card key={movie.id} className={styles.movieCard}>
+              <Card key={movie.id} className={styles.movieCard} onClick={() => handleMovieClick(movie)}>
                 <div className={styles.posterContainer}>
                   {getImageUrl(movie.poster_path) ? (
                     <img
@@ -506,6 +595,31 @@ export function TMDB() {
           </Card>
         </section>
       )}
+
+      {/* Movie Details Modal */}
+      <MovieDetailsModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        movie={selectedMovie}
+        cast={movieCast}
+        videos={movieVideos}
+        loading={castLoading}
+        imageBaseUrl={config?.images?.secure_base_url || 'https://image.tmdb.org/t/p/'}
+        onCastMemberClick={loadPersonMovies}
+      />
+
+      {/* Person Movies Modal */}
+      <PersonMoviesModal
+        open={personMoviesModalOpen}
+        onOpenChange={setPersonMoviesModalOpen}
+        personName={selectedPersonName}
+        personInfo={selectedPersonInfo}
+        movies={personMovies}
+        photos={personPhotos}
+        loading={personMoviesLoading}
+        imageBaseUrl={config?.images?.secure_base_url || 'https://image.tmdb.org/t/p/'}
+        onMovieClick={handleMovieFromPersonClick}
+      />
     </div>
   );
 }

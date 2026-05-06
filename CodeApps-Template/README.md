@@ -9,6 +9,11 @@ This template provides a minimal setup to get a Code App running for demonstrati
 - [Node.js LTS](https://nodejs.org/)
 - [Git](https://git-scm.com/)
 
+### Resource Requirements
+
+- Azure Key Vault - for Custom Connector API Key
+- Azure SQL Database - for Private movie reviews
+
 ### Power Platform Environment
 
 - Dataverse enabled
@@ -100,6 +105,14 @@ For custom connectors, you will need the API ID of your TMDB custom connector.
 
 ```bash
 npx power-apps add-data-source --api-id <your-tmdb-custom-connector-api-id> --connection-id <your-tmdb-connectionid>
+```
+
+#### 2d. SQL Database
+
+For movie reviews, you will need an Azure SQL Database using Entra ID authentication.
+
+```bash
+npx power-apps add-data-source --api-id "shared_sql" --connection-id "<your-sqlconnector-id>" --dataset "<yourSQLServer.database.windows.net>,movieReviews" --resource-name "[dbo].[Reviews]" --org-url <your-org-url>
 ```
 
 ### 3. Add Power Automate Flow
