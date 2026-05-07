@@ -1,5 +1,5 @@
 import { Text, Card, makeStyles, shorthands, tokens, Button, Badge, Spinner, Input, Dropdown, Option, Field } from '@fluentui/react-components';
-import { SearchRegular } from '@fluentui/react-icons';
+import { SearchRegular, VideoFilled } from '@fluentui/react-icons';
 import { useState, useEffect } from 'react';
 import { TMDBService } from '../generated/services/TMDBService';
 import { useTheme } from '../hooks/useTheme';
@@ -114,17 +114,15 @@ const useStyles = makeStyles({
   noResultsText: {
     fontSize: tokens.fontSizeBase300,
   },
-  pageHeader: {
-    marginBottom: '24px',
+  headerIcon: {
+    fontSize: '24px',
+    color: tokens.colorBrandForeground1,
   },
-  headerTitle: {
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: tokens.fontWeightBold,
-    marginBottom: '8px',
-  },
-  headerSubtitle: {
-    fontSize: tokens.fontSizeBase300,
-    fontWeight: tokens.fontWeightRegular,
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('12px'),
+    marginBottom: '20px',
   },
 });
 
@@ -453,12 +451,11 @@ export function TMDB() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <div className={styles.headerTitle} style={{ color: tokens.colorNeutralForeground1 }}>
-          🎬 Movie Database
-        </div>
-        <div className={styles.headerSubtitle} style={{ color: tokens.colorNeutralForeground2 }}>
-          Discover trending movies and explore through The Movie Database API
+      <div className={styles.header}>
+        <VideoFilled className={styles.headerIcon} />
+        <div>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: tokens.fontSizeBase500 }}>Movie Database</h1>
+          <p style={{ margin: '0', fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground2 }}>Discover trending movies and explore through The Movie Database API</p>
         </div>
       </div>
 

@@ -22,6 +22,7 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     ...shorthands.gap('12px'),
+    marginBottom: '20px',
   },
 })
 

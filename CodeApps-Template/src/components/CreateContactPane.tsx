@@ -4,6 +4,7 @@ import { Dismiss20Regular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
+import type { CreateContactPaneProps } from '../types/CustomerTypes'
 
 const useStyles = makeStyles({
   paneOverlay: {
@@ -95,13 +96,6 @@ const useStyles = makeStyles({
     minWidth: '100px',
   },
 })
-
-interface CreateContactPaneProps {
-  account: Accounts | null
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-  onSave: (contact: Contacts) => void
-}
 
 export function CreateContactPane({
   account,

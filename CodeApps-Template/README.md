@@ -18,7 +18,11 @@ This template provides a minimal setup to get a Code App running for demonstrati
 
 - Dataverse enabled
 - Code Apps enabled
-- Import solution CodeAppsTemplate
+- Import solution CodeAppsTemplate (includes)
+  - TMDB Custom Connector
+  - API Key environment variable
+  - Cloud flow to obtain API key environment variable value
+  - Copilot Studio agent
 - Connections configured for:
   - Office 365 Outlook
   - Office 365 Users
@@ -112,7 +116,15 @@ npx power-apps add-data-source --api-id <your-tmdb-custom-connector-api-id> --co
 For movie reviews, you will need an Azure SQL Database using Entra ID authentication.
 
 ```bash
-npx power-apps add-data-source --api-id "shared_sql" --connection-id "<your-sqlconnector-id>" --dataset "<yourSQLServer.database.windows.net>,movieReviews" --resource-name "[dbo].[Reviews]" --org-url <your-org-url>
+npx power-apps add-data-source --api-id shared_sql --connection-id <your-sqlconnector-id> --dataset <yourSQLServer.database.windows.net>,movieReviews --resource-name "[dbo].[Reviews]" --org-url <your-org-url>
+```
+
+#### 2e. Copilot Studio
+
+For the agent panel, you will need a Copilot Studio connection to connect to the agent provided in the prerequisite solution.
+
+``` bash
+npx power-apps add-data-source --api-id shared_microsoftcopilotstudio --connection-id <your-copilotStudioConnector-id> --org-url <your-org-url>
 ```
 
 ### 3. Add Power Automate Flow

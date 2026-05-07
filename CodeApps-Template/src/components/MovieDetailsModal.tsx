@@ -6,25 +6,7 @@ import { Office365UsersService } from '../generated/services/Office365UsersServi
 import type { Reviews } from '../generated/models/ReviewsModel';
 import { getContext } from '@microsoft/power-apps/app';
 import type { CastMember, Video } from '../types/TMDBTypes';
-
-interface MovieDetailsModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  movie: {
-    id: number;
-    title: string;
-    poster_path: string | null;
-    overview: string;
-    release_date: string;
-    vote_average: number;
-    popularity: number;
-  } | null;
-  cast: CastMember[];
-  videos: Video[];
-  loading: boolean;
-  imageBaseUrl: string | null;
-  onCastMemberClick?: (personId: number, personName: string) => void;
-}
+import type { MovieDetailsModalProps } from '../types/MovieComponentTypes';
 
 const useStyles = makeStyles({
   dialogSurface: {

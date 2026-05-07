@@ -1,12 +1,13 @@
-import type { ReactNode } from 'react'
 import { makeStyles, shorthands, tokens, Button, Breadcrumb, BreadcrumbItem, BreadcrumbDivider, Text, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem } from '@fluentui/react-components'
 import { HomeRegular, HomeFilled, NavigationRegular, PeopleRegular, PeopleFilled, WeatherMoonRegular, WeatherSunnyRegular, ColorRegular, MoreVerticalRegular, MailRegular, MailFilled, VideoRegular, VideoFilled} from '@fluentui/react-icons'
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTheme } from '../hooks/useTheme'
 import ThemePickerDialog from './ThemePickerDialog'
+import { AgentPanel } from './AgentPanel'
 import { Office365UsersService } from '../generated/services/Office365UsersService'
 import type { GraphUser_V1 } from '../generated/models/Office365UsersModel'
+import type { NavItem, LayoutProps } from '../types/LayoutTypes'
 
 const useStyles = makeStyles({
   root: {
@@ -20,10 +21,10 @@ const useStyles = makeStyles({
     display: 'flex',
     flex: 1,
     overflow: 'hidden',
-    marginTop: '64px',
+    marginTop: '40px',
     '@media (max-width: 768px)': {
       flexDirection: 'column',
-      marginTop: '64px',
+      marginTop: '40px',
     },
   },
   sidebar: {
@@ -37,16 +38,16 @@ const useStyles = makeStyles({
     position: 'relative',
     top: 0,
     left: 0,
-    height: 'calc(100vh - 64px)',
+    height: 'calc(100vh - 40px)',
     transition: 'width 0.3s ease-in-out',
     overflow: 'hidden',
     '@media (max-width: 768px)': {
       position: 'fixed',
       width: '100vw',
       transform: 'translateX(-100%)',
-      top: '64px',
+      top: '40px',
       left: 0,
-      height: 'calc(100vh - 64px)',
+      height: 'calc(100vh - 40px)',
       zIndex: 1000,
       flexShrink: 1,
     },
@@ -87,7 +88,7 @@ const useStyles = makeStyles({
     display: 'grid',
     gridTemplateColumns: 'auto 1fr auto',
     alignItems: 'center',
-    minHeight: '64px',
+    minHeight: '40px',
     boxShadow: tokens.shadow4,
   },
   headerLeft: {
@@ -260,7 +261,6 @@ const useStyles = makeStyles({
     justifyContent: 'space-between',
     ...shorthands.gap('12px'),
     ...shorthands.padding('12px'),
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
     marginTop: '8px',
     marginBottom: '32px',
     marginLeft: '-16px',
@@ -326,6 +326,42 @@ const useStyles = makeStyles({
     display: 'flex',
     justifyContent: 'center',
   },
+  agentToggle: {
+    ...shorthands.padding('12px', '4px'),
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    marginTop: '8px',
+    marginLeft: '-16px',
+    marginRight: '-16px',
+    paddingLeft: '4px',
+    paddingRight: '4px',
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  agentButton: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('12px'),
+    ...shorthands.padding('12px', '16px'),
+    width: '100%',
+    justifyContent: 'flex-start',
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    minWidth: 'auto',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
+  },
+  agentButtonCollapsed: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shorthands.padding('12px'),
+    width: '100%',
+    minWidth: 'auto',
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
+  },
   menuItem: {
     '& svg': {
       transition: 'color 0.2s ease',
@@ -335,14 +371,6 @@ const useStyles = makeStyles({
     },
   },
 })
-
-interface NavItem {
-  path: string
-  label: string
-  description: string
-  icon: React.ReactElement
-  iconFilled: React.ReactElement
-}
 
 const navItems: NavItem[] = [
   {
@@ -382,16 +410,13 @@ const routeNames: Record<string, string> = {
   '/tmdb': 'Movie Database',
 }
 
-interface LayoutProps {
-  children: ReactNode
-}
-
 export default function Layout({ children }: LayoutProps) {
   const styles = useStyles()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [themePickerOpen, setThemePickerOpen] = useState(false)
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<GraphUser_V1 | null>(null)
   const [userPhoto, setUserPhoto] = useState<string | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -579,6 +604,25 @@ export default function Layout({ children }: LayoutProps) {
           </ul>
         </nav>
 
+        {/* Agent Toggle Button */}
+        <div className={styles.agentToggle}>
+          <Button
+            appearance="subtle"
+            className={collapsed ? styles.agentButtonCollapsed : styles.agentButton}
+            onClick={() => setAgentPanelOpen(true)}
+            title="Agent"
+            icon={
+              <img
+                src="/CopilotStudio-26.png"
+                alt="Copilot Studio"
+                style={{ width: '24px', height: '24px' }}
+              />
+            }
+          >
+            {!collapsed && 'Agent'}
+          </Button>
+        </div>
+
         {/* User Profile Section */}
         {userProfile && (
           <div className={styles.userProfileSection} style={collapsed ? { justifyContent: 'center' } : {}}>
@@ -675,6 +719,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Theme Picker Dialog */}
       <ThemePickerDialog open={themePickerOpen} onOpenChange={setThemePickerOpen} />
+
+      {/* Agent Panel */}
+      <AgentPanel open={agentPanelOpen} onOpenChange={setAgentPanelOpen} />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
 import { ContactEditPane } from './ContactEditPane'
 import { CreateContactPane } from './CreateContactPane'
+import type { AccountContactsPaneProps } from '../types/CustomerTypes'
 
 const useStyles = makeStyles({
   paneOverlay: {
@@ -156,12 +157,6 @@ const useStyles = makeStyles({
     padding: '24px',
   },
 })
-
-interface AccountContactsPaneProps {
-  account: Accounts | null
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-}
 
 export function AccountContactsPane({
   account,

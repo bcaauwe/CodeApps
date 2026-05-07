@@ -3,6 +3,7 @@ import { Button, Input, Label, makeStyles, tokens } from '@fluentui/react-compon
 import { Dismiss20Regular } from '@fluentui/react-icons'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
+import type { ContactEditPaneProps } from '../types/CustomerTypes'
 
 const useStyles = makeStyles({
   paneOverlay: {
@@ -94,13 +95,6 @@ const useStyles = makeStyles({
     minWidth: '100px',
   },
 })
-
-interface ContactEditPaneProps {
-  contact: Contacts | null
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-  onSave: (contact: Contacts) => void
-}
 
 export function ContactEditPane({
   contact,

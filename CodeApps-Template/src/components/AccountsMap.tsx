@@ -5,6 +5,7 @@ import { FilterRegular, DismissRegular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
+import type { AccountsMapProps } from '../types/CustomerTypes'
 import 'leaflet/dist/leaflet.css'
 import '../styles/AccountsMap.css'
 
@@ -84,12 +85,6 @@ const getMarkerColorByRevenue = (revenue?: number) => {
 }
 
 L.Marker.prototype.options.icon = DefaultIcon
-
-interface AccountsMapProps {
-  accounts: Accounts[]
-  onEditAccount: (account: Accounts) => void
-  onViewContacts?: (account: Accounts) => void
-}
 
 export function AccountsMap({ accounts, onEditAccount, onViewContacts }: AccountsMapProps) {
   const styles = useStyles()

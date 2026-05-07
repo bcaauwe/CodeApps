@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Button, Input, Label, makeStyles, tokens } from '@fluentui/react-components'
 import { Dismiss20Regular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
+import type { AccountEditModalProps } from '../types/CustomerTypes'
 
 const useStyles = makeStyles({
   paneOverlay: {
@@ -100,13 +101,6 @@ const useStyles = makeStyles({
     minWidth: '100px',
   },
 })
-
-interface AccountEditModalProps {
-  account: Accounts | null
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-  onSave: (account: Accounts) => void
-}
 
 export function AccountEditModal({
   account,

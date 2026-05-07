@@ -3,6 +3,7 @@ import { DismissRegular } from '@fluentui/react-icons'
 import { useState, useEffect } from 'react'
 import PickerOverlay from 'react-pick-color'
 import { useTheme } from '../hooks/useTheme'
+import type { ThemePickerModalProps } from '../types/LayoutTypes'
 
 const useStyles = makeStyles({
   sidecarContainer: {
@@ -111,11 +112,6 @@ const useStyles = makeStyles({
     justifyContent: 'flex-end',
   },
 })
-
-interface ThemePickerModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
 
 export default function ThemePickerModal({ open, onOpenChange }: ThemePickerModalProps) {
   const styles = useStyles()

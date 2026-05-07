@@ -2,18 +2,7 @@ import { Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogAc
 import { ChevronDownRegular, ChevronLeftRegular, ChevronRightRegular } from '@fluentui/react-icons';
 import { useState, useEffect } from 'react';
 import type { PersonMovie, PersonPhoto, PersonInfo } from '../types/TMDBTypes';
-
-interface PersonMoviesModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  personName: string | null;
-  personInfo?: PersonInfo | null;
-  movies: PersonMovie[];
-  photos?: PersonPhoto[];
-  loading: boolean;
-  imageBaseUrl: string | null;
-  onMovieClick?: (movieId: number) => void;
-}
+import type { PersonMoviesModalProps } from '../types/MovieComponentTypes';
 
 const useStyles = makeStyles({
   dialogSurface: {
