@@ -5,7 +5,6 @@ import { ReviewsService } from '../generated/services/ReviewsService';
 import { Office365UsersService } from '../generated/services/Office365UsersService';
 import type { Reviews } from '../generated/models/ReviewsModel';
 import { getContext } from '@microsoft/power-apps/app';
-import type { CastMember, Video } from '../types/TMDBTypes';
 import type { MovieDetailsModalProps } from '../types/MovieComponentTypes';
 
 const useStyles = makeStyles({

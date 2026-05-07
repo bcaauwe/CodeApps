@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button, Input, Label, makeStyles, tokens } from '@fluentui/react-components'
 import { Dismiss20Regular } from '@fluentui/react-icons'
-import type { Accounts } from '../generated/models/AccountsModel'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
 import type { CreateContactPaneProps } from '../types/CustomerTypes'

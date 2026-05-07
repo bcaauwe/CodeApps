@@ -154,6 +154,78 @@
   background: var(--colorBrandBackgroundPressed, #004080);
 }
 
+.map-popup-summary-btn {
+  padding: 6px 12px;
+  background: var(--colorBrandBackground, #0066cc);
+  color: var(--colorNeutralForegroundOnBrand, #ffffff);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.map-popup-summary-btn:hover {
+  background: var(--colorBrandBackgroundHover, #0052a3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.map-popup-summary-btn:active {
+  background: var(--colorBrandBackgroundPressed, #004080);
+}
+
+.map-popup-summary {
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--colorNeutralBackground2, #f5f5f5);
+  border-radius: 6px;
+  border: 1px solid var(--colorNeutralStroke2, #e0e0e0);
+}
+
+.map-popup-summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--colorNeutralForeground2, #555);
+}
+
+.map-popup-summary-content {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--colorNeutralForeground1, #333);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.map-popup-summary-content p {
+  margin: 0 0 8px 0;
+}
+
+.map-popup-summary-content ul,
+.map-popup-summary-content ol {
+  margin: 0 0 8px 0;
+  padding-left: 18px;
+}
+
+.map-popup-summary-content li {
+  margin-bottom: 4px;
+}
+
+.map-popup-summary-content h1,
+.map-popup-summary-content h2,
+.map-popup-summary-content h3 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.map-popup-summary-content a {
+  color: var(--colorBrandForeground1, #0066cc);
+  text-decoration: none;
+}
+
 .map-popup-edit-btn:active {
   background: var(--colorBrandBackgroundPressed, #004080);
 }

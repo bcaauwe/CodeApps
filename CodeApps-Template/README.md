@@ -143,10 +143,10 @@ npx power-apps add-flow --flow-id <flow-id>
 
 ### 4. Add Dataverse Actions
 
-Run the following command to register the dataverse action
+Run the following command to register the dataverse action used on the customer details pane
 
 ```bash
-npx power-apps add-dataverse-api --api-name <TBD>
+npx power-apps add-dataverse-api --api-name AISummarizeRecord
 ```
 
 ### 5. Run Locally

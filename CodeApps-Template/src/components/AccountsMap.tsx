@@ -5,6 +5,8 @@ import { FilterRegular, DismissRegular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
+import { AISummarizeRecordService } from '../generated/services/AISummarizeRecordService'
+import { marked } from 'marked'
 import type { AccountsMapProps } from '../types/CustomerTypes'
 import 'leaflet/dist/leaflet.css'
 import '../styles/AccountsMap.css'
@@ -367,6 +369,11 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
               ${contactEmail ? `<div class="map-popup-contact-email"><a href="mailto:${contactEmail}">✉️ ${contactEmail}</a></div>` : ''}
             </div>
 
+            <div class="map-popup-summary" id="summary-${account.accountid}">
+              <div class="map-popup-summary-label">🤖 AI Summary</div>
+              <div class="map-popup-summary-content" id="summary-content-${account.accountid}"><em>Loading summary...</em></div>
+            </div>
+
             <div class="map-popup-actions">
               <button class="map-popup-edit-btn" data-account-id="${account.accountid}" title="Edit account">
                 Edit
@@ -398,6 +405,38 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
             contactsBtn.addEventListener('click', () => {
               handleViewContacts(account.accountid)
             })
+          }
+
+          // Fetch AI summary automatically
+          const summaryContent = document.getElementById(`summary-content-${account.accountid}`)
+          if (summaryContent) {
+            ;(async () => {
+              try {
+                const contactsResult = await ContactsService.getAll({
+                  filter: `_accountid_value eq '${account.accountid}'`,
+                })
+                const contactsList: Contacts[] = Array.isArray(contactsResult) ? contactsResult : (contactsResult as any)?.data || []
+
+                const accountContacts = contactsList.map((contact) => ({
+                  name: `${contact.firstname || ''} ${contact.lastname || ''}`.trim(),
+                  email: contact.emailaddress1 || '',
+                  phone: contact.telephone1 || '',
+                  jobTitle: contact.jobtitle || '',
+                }))
+
+                const recordContext = accountContacts.length > 0
+                  ? JSON.stringify({ relatedContacts: accountContacts })
+                  : undefined
+
+                const result = await AISummarizeRecordService.AISummarizeRecord('account', account.accountid, true, recordContext)
+                const data = result?.data as any
+                const summaryText = data?.SummarizedText || data?.summary || 'No summary available.'
+                summaryContent.innerHTML = marked.parse(summaryText) as string
+              } catch (err) {
+                summaryContent.textContent = 'Failed to load summary.'
+                console.error('Error fetching AI summary:', err)
+              }
+            })()
           }
         })
 

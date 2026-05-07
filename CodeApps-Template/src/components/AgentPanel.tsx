@@ -9,9 +9,9 @@ import type { AgentPanelProps, ChatMessage } from '../types/AgentPanelTypes'
 const useStyles = makeStyles({
   sidecarContainer: {
     position: 'fixed',
-    top: '80px',
+    top: '56px',
     right: 0,
-    height: 'calc(100vh - 80px)',
+    height: 'calc(100vh - 56px)',
     width: '500px',
     backgroundColor: tokens.colorNeutralBackground1,
     boxShadow: '0 0 28px rgba(0, 0, 0, 0.2)',

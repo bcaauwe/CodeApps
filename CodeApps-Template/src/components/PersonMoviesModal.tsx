@@ -1,7 +1,6 @@
 import { Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions, Button, makeStyles, shorthands, tokens, Spinner } from '@fluentui/react-components';
 import { ChevronDownRegular, ChevronLeftRegular, ChevronRightRegular } from '@fluentui/react-icons';
 import { useState, useEffect } from 'react';
-import type { PersonMovie, PersonPhoto, PersonInfo } from '../types/TMDBTypes';
 import type { PersonMoviesModalProps } from '../types/MovieComponentTypes';
 
 const useStyles = makeStyles({

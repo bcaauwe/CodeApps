@@ -14,6 +14,7 @@
     "@fluentui/react-icons": "^2.0.324",
     "@microsoft/power-apps": "^1.0.3",
     "leaflet": "^1.9.4",
+    "marked": "^18.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
