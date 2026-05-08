@@ -593,7 +593,9 @@ export default function MovieDetailsModal({ open, onOpenChange, movie, cast, vid
                                 className={styles.castImage}
                               />
                             ) : (
-                              <div className={styles.castImagePlaceholder}>👤</div>
+                              <div className={styles.castImagePlaceholder}>
+                                <Avatar name={member.name} size={72} />
+                              </div>
                             )}
                             <div className={styles.castName} title={member.name}>
                               {member.name}
