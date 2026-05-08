@@ -5,9 +5,8 @@ import { FilterRegular, DismissRegular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
 import type { Contacts } from '../generated/models/ContactsModel'
 import { ContactsService } from '../generated/services/ContactsService'
-import { AISummarizeRecordService } from '../generated/services/AISummarizeRecordService'
-import { marked } from 'marked'
 import type { AccountsMapProps } from '../types/CustomerTypes'
+import { useTheme } from '../hooks/useTheme'
 import 'leaflet/dist/leaflet.css'
 import '../styles/AccountsMap.css'
 
@@ -88,11 +87,13 @@ const getMarkerColorByRevenue = (revenue?: number) => {
 
 L.Marker.prototype.options.icon = DefaultIcon
 
-export function AccountsMap({ accounts, onEditAccount, onViewContacts }: AccountsMapProps) {
+export function AccountsMap({ accounts, onViewDetails }: AccountsMapProps) {
   const styles = useStyles()
+  const { isDarkMode } = useTheme()
   const mapRef = useRef<L.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const markersRef = useRef<L.Marker[]>([])
+  const tileLayerRef = useRef<L.TileLayer | null>(null)
   const [contactsMap, setContactsMap] = useState<Map<string, Contacts>>()
   const [selectedState, setSelectedState] = useState<string>('')
   const [selectedRevenue, setSelectedRevenue] = useState<string>('')
@@ -154,22 +155,6 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
     })
   }
 
-  // Handle edit account
-  const handleEditAccount = (accountId: string) => {
-    const account = accountsMapRef.current.get(accountId)
-    if (account) {
-      onEditAccount(account)
-    }
-  }
-
-  // Handle view contacts
-  const handleViewContacts = (accountId: string) => {
-    const account = accountsMapRef.current.get(accountId)
-    if (account && onViewContacts) {
-      onViewContacts(account)
-    }
-  }
-
   // Handle clear filters
   const handleClearFilters = () => {
     setSelectedState('')
@@ -205,6 +190,24 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
     })
   }, [accounts])
 
+  // Swap tile layer when theme changes
+  useEffect(() => {
+    if (!mapRef.current || !tileLayerRef.current) return
+
+    const tileUrl = isDarkMode
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    const tileAttribution = isDarkMode
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+    mapRef.current.removeLayer(tileLayerRef.current)
+    tileLayerRef.current = L.tileLayer(tileUrl, {
+      attribution: tileAttribution,
+      maxZoom: 19,
+    }).addTo(mapRef.current)
+  }, [isDarkMode])
+
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -212,8 +215,15 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
     if (!mapRef.current) {
       mapRef.current = L.map(containerRef.current).setView([39.8283, -98.5795], 4)
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      const tileUrl = isDarkMode
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      const tileAttribution = isDarkMode
+        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+      tileLayerRef.current = L.tileLayer(tileUrl, {
+        attribution: tileAttribution,
         maxZoom: 19,
       }).addTo(mapRef.current)
 
@@ -303,144 +313,14 @@ export function AccountsMap({ accounts, onEditAccount, onViewContacts }: Account
           icon: markerIcon,
         })
 
-        // Get primary contact for this account using the account's primary contact ID
-        const primaryContactId = (account as any)._primarycontactid_value
-        const primaryContact = primaryContactId ? contactsMap?.get(primaryContactId) : undefined
-        const contactName = primaryContact
-          ? `${primaryContact.firstname || ''} ${primaryContact.lastname || ''}`.trim()
-          : 'No contact'
-        const contactEmail = primaryContact?.emailaddress1 || ''
-
-        const popupContent = `
-          <div class="map-popup-container">
-            <div class="map-popup-header">
-              <h3 class="map-popup-title">${account.name}</h3>
-            </div>
-            
-            <div class="map-popup-address-section">
-              ${account.address1_line1 ? `<p class="map-popup-address-line">📍 ${account.address1_line1}</p>` : ''}
-              ${
-                account.address1_city
-                  ? `<p class="map-popup-address">
-                      ${account.address1_city}${
-                      account.address1_stateorprovince ? `, ${account.address1_stateorprovince}` : ''
-                    }
-                    </p>`
-                  : ''
-              }
-            </div>
-            ${
-              account.websiteurl
-                ? `<p class="map-popup-link">
-                    <a href="${account.websiteurl}" target="_blank" rel="noopener noreferrer">
-                      🌐 Website
-                    </a>
-                  </p>`
-                : ''
-            }
-            
-            ${
-              account.telephone1
-                ? `<p class="map-popup-info">
-                    📞 <a href="tel:${account.telephone1}">${account.telephone1}</a>
-                  </p>`
-                : ''
-            }
-            
-            ${
-              account.revenue
-                ? `<p class="map-popup-info">
-                    💰 Revenue: $${((account.revenue as any) / 1000000).toFixed(1)}M
-                  </p>`
-                : ''
-            }
-            
-            ${
-              account.numberofemployees
-                ? `<p class="map-popup-info">
-                    👥 Employees: ${account.numberofemployees}
-                  </p>`
-                : ''
-            }
-            
-            <div class="map-popup-contact-box">
-              <div class="map-popup-contact-label">👤 Primary Contact</div>
-              <div class="map-popup-contact-name">${contactName}</div>
-              ${contactEmail ? `<div class="map-popup-contact-email"><a href="mailto:${contactEmail}">✉️ ${contactEmail}</a></div>` : ''}
-            </div>
-
-            <div class="map-popup-summary" id="summary-${account.accountid}">
-              <div class="map-popup-summary-label">🤖 AI Summary</div>
-              <div class="map-popup-summary-content" id="summary-content-${account.accountid}"><em>Loading summary...</em></div>
-            </div>
-
-            <div class="map-popup-actions">
-              <button class="map-popup-edit-btn" data-account-id="${account.accountid}" title="Edit account">
-                Edit
-              </button>
-              <button class="map-popup-contacts-btn" data-account-id="${account.accountid}" title="View contacts">
-                Contacts
-              </button>
-            </div>
-          </div>
-        `
-
-        const popup = marker.bindPopup(popupContent)
-        
-        // Add event listener for the edit button
-        popup.on('popupopen', () => {
-          const editBtn = document.querySelector(
-            `[data-account-id="${account.accountid}"]`
-          ) as HTMLElement
-          if (editBtn) {
-            editBtn.addEventListener('click', () => {
-              handleEditAccount(account.accountid)
-            })
-          }
-          
-          const contactsBtn = document.querySelector(
-            `.map-popup-contacts-btn[data-account-id="${account.accountid}"]`
-          ) as HTMLElement
-          if (contactsBtn) {
-            contactsBtn.addEventListener('click', () => {
-              handleViewContacts(account.accountid)
-            })
-          }
-
-          // Fetch AI summary automatically
-          const summaryContent = document.getElementById(`summary-content-${account.accountid}`)
-          if (summaryContent) {
-            ;(async () => {
-              try {
-                const contactsResult = await ContactsService.getAll({
-                  filter: `_accountid_value eq '${account.accountid}'`,
-                })
-                const contactsList: Contacts[] = Array.isArray(contactsResult) ? contactsResult : (contactsResult as any)?.data || []
-
-                const accountContacts = contactsList.map((contact) => ({
-                  name: `${contact.firstname || ''} ${contact.lastname || ''}`.trim(),
-                  email: contact.emailaddress1 || '',
-                  phone: contact.telephone1 || '',
-                  jobTitle: contact.jobtitle || '',
-                }))
-
-                const recordContext = accountContacts.length > 0
-                  ? JSON.stringify({ relatedContacts: accountContacts })
-                  : undefined
-
-                const result = await AISummarizeRecordService.AISummarizeRecord('account', account.accountid, true, recordContext)
-                const data = result?.data as any
-                const summaryText = data?.SummarizedText || data?.summary || 'No summary available.'
-                summaryContent.innerHTML = marked.parse(summaryText) as string
-              } catch (err) {
-                summaryContent.textContent = 'Failed to load summary.'
-                console.error('Error fetching AI summary:', err)
-              }
-            })()
+        // Open details modal on click
+        marker.on('click', () => {
+          if (onViewDetails) {
+            onViewDetails(account)
           }
         })
 
-        popup.addTo(mapRef.current)
+        marker.addTo(mapRef.current)
         markersRef.current.push(marker)
       }
     })

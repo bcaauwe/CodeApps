@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Button, Input, Label, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, Combobox, Input, Label, makeStyles, Option, Spinner, tokens } from '@fluentui/react-components'
 import { Dismiss20Regular } from '@fluentui/react-icons'
 import type { Accounts } from '../generated/models/AccountsModel'
+import type { Contacts } from '../generated/models/ContactsModel'
+import { ContactsService } from '../generated/services/ContactsService'
+import { AccountsService } from '../generated/services/AccountsService'
 import type { AccountEditModalProps } from '../types/CustomerTypes'
 
 const useStyles = makeStyles({
@@ -110,12 +113,48 @@ export function AccountEditModal({
 }: AccountEditModalProps) {
   const styles = useStyles()
   const [formData, setFormData] = useState<Accounts | null>(null)
+  const [contacts, setContacts] = useState<Contacts[]>([])
+  const [loadingContacts, setLoadingContacts] = useState(false)
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
+  const [selectedContactName, setSelectedContactName] = useState<string>('')
 
   // Update form data when account changes
   useEffect(() => {
     if (account) {
       setFormData({ ...account })
     }
+  }, [account, isOpen])
+
+  // Fetch contacts for this account when modal opens
+  useEffect(() => {
+    if (!account || !isOpen) return
+
+    setLoadingContacts(true)
+    ContactsService.getAll({
+      filter: `_accountid_value eq '${account.accountid}'`,
+    })
+      .then((result) => {
+        const list: Contacts[] = Array.isArray(result) ? result : (result as any)?.data || []
+        setContacts(list)
+
+        // Set the current primary contact if one exists
+        const primaryId = (account as any)._primarycontactid_value
+        if (primaryId) {
+          setSelectedContactId(primaryId)
+          const match = list.find((c) => c.contactid === primaryId)
+          if (match) {
+            setSelectedContactName(`${match.firstname || ''} ${match.lastname || ''}`.trim())
+          }
+        } else {
+          setSelectedContactId(null)
+          setSelectedContactName('')
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching contacts:', err)
+        setContacts([])
+      })
+      .finally(() => setLoadingContacts(false))
   }, [account, isOpen])
 
   const handleInputChange = (field: keyof Accounts, value: string | number) => {
@@ -127,10 +166,44 @@ export function AccountEditModal({
     }
   }
 
-  const handleSave = () => {
-    if (formData) {
-      onSave(formData)
-      onOpenChange(false)
+  const handleSave = async () => {
+    if (formData && account?.accountid) {
+      // Only include fields that have actually changed
+      const changedFields: Record<string, any> = {}
+      for (const key of Object.keys(formData) as (keyof Accounts)[]) {
+        if (formData[key] !== account[key]) {
+          changedFields[key] = formData[key]
+        }
+      }
+
+      // Handle primary contact lookup bind
+      const originalPrimaryId = (account as any)._primarycontactid_value || null
+      if (selectedContactId !== originalPrimaryId) {
+        if (selectedContactId) {
+          changedFields["primarycontactid@odata.bind"] = `contacts(${selectedContactId})`
+        } else {
+          changedFields["primarycontactid@odata.bind"] = null
+        }
+      }
+
+      // Skip update if nothing changed
+      if (Object.keys(changedFields).length === 0) {
+        onOpenChange(false)
+        return
+      }
+
+      try {
+        await AccountsService.update(account.accountid, changedFields)
+        // Include updated primary contact ID so the details modal can refresh
+        const updatedAccount = {
+          ...formData,
+          _primarycontactid_value: selectedContactId || null,
+        } as Accounts
+        onSave(updatedAccount)
+        onOpenChange(false)
+      } catch (err) {
+        console.error('Error updating account:', err)
+      }
     }
   }
 
@@ -175,6 +248,42 @@ export function AccountEditModal({
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter account name"
               />
+            </div>
+
+            {/* Primary Contact - Full Width */}
+            <div className={styles.fullWidthFormGroup}>
+              <Label className={styles.formLabel}>Primary Contact</Label>
+              {loadingContacts ? (
+                <Spinner size="tiny" label="Loading contacts..." />
+              ) : (
+                <Combobox
+                  className={styles.formInput}
+                  value={selectedContactName}
+                  onOptionSelect={(_e, data) => {
+                    if (data?.optionValue) {
+                      setSelectedContactId(data.optionValue)
+                      setSelectedContactName(data.optionText || '')
+                    } else {
+                      setSelectedContactId(null)
+                      setSelectedContactName('')
+                    }
+                  }}
+                  placeholder={contacts.length === 0 ? 'No contacts available' : 'Select a primary contact'}
+                  disabled={contacts.length === 0}
+                >
+                  <Option text="(None)" value="">
+                    (None)
+                  </Option>
+                  {contacts.map((contact) => {
+                    const displayName = `${contact.firstname || ''} ${contact.lastname || ''}`.trim()
+                    return (
+                      <Option key={contact.contactid} text={displayName} value={contact.contactid}>
+                        {displayName}
+                      </Option>
+                    )
+                  })}
+                </Combobox>
+              )}
             </div>
 
             {/* Address Line 1 - Full Width */}

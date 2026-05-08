@@ -89,6 +89,8 @@ Run the following commands from the project root to add each Dataverse table. Wh
 
 ##### Account table
 
+In order for the Customers to show on the map, Accounts will need populated latitude and longitude fields on their primary address.
+
 ```bash
 npx power-apps add-data-source --api-id dataverse --resource-name account --org-url <your-org-url>
 ```

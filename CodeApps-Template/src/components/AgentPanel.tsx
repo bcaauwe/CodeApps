@@ -303,18 +303,43 @@ export function AgentPanel({ open, onOpenChange }: AgentPanelProps) {
                           th: ({ ...props }) => <th style={{ border: `1px solid ${tokens.colorNeutralStroke1}`, padding: '6px 10px', textAlign: 'left', fontWeight: 600 }} {...props} />,
                           td: ({ ...props }) => <td style={{ border: `1px solid ${tokens.colorNeutralStroke1}`, padding: '6px 10px' }} {...props} />,
                           tr: ({ ...props }) => <tr {...props} />,
-                          a: ({ href, ...props }) => (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: tokens.colorBrandForeground1, textDecoration: 'underline', wordBreak: 'break-all' }}
-                              {...props}
-                            />
-                          ),
+                          a: ({ href, children, ...props }) => {
+                            const isInternalLink = href && (href.startsWith('#/') || href.startsWith('/'))
+                            if (isInternalLink) {
+                              return (
+                                <a
+                                  href={href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    // For hash-router links like #/customers?accountId=...
+                                    if (href.startsWith('#/')) {
+                                      window.location.hash = href.substring(1)
+                                    } else {
+                                      window.location.hash = href
+                                    }
+                                  }}
+                                  style={{ color: tokens.colorBrandForeground1, textDecoration: 'underline', wordBreak: 'break-all', cursor: 'pointer' }}
+                                  {...props}
+                                >
+                                  {children}
+                                </a>
+                              )
+                            }
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: tokens.colorBrandForeground1, textDecoration: 'underline', wordBreak: 'break-all' }}
+                                {...props}
+                              >
+                                {children}
+                              </a>
+                            )
+                          },
                         }}
                       >
-                        {msg.content}
+                        {msg.content.replace(/<\/?u>/gi, '')}
                       </ReactMarkdown>
                     ) : (
                       <Text>{msg.content}</Text>

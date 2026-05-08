@@ -18,6 +18,7 @@ export interface AccountsMapProps {
   accounts: Accounts[]
   onEditAccount: (account: Accounts) => void
   onViewContacts?: (account: Accounts) => void
+  onViewDetails?: (account: Accounts) => void
 }
 
 export interface ContactEditPaneProps {

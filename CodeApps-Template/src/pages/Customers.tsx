@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { makeStyles, shorthands, tokens } from '@fluentui/react-components'
 import { PeopleFilled } from '@fluentui/react-icons'
 import { AccountsService } from '../generated/services/AccountsService'
 import type { Accounts } from '../generated/models/AccountsModel'
 import { AccountsMap } from '../components/AccountsMap'
 import { AccountEditModal } from '../components/AccountEditModal'
+import { AccountDetailsModal } from '../components/AccountDetailsModal'
 import { AccountContactsPane } from '../components/AccountContactsPane'
 import '../styles/Customers.css'
 
@@ -28,6 +30,7 @@ const useStyles = makeStyles({
 
 export function Customers() {
   const styles = useStyles()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [accounts, setAccounts] = useState<Accounts[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +38,23 @@ export function Customers() {
   const [selectedAccount, setSelectedAccount] = useState<Accounts | null>(null)
   const [isContactsPaneOpen, setIsContactsPaneOpen] = useState(false)
   const [selectedAccountForContacts, setSelectedAccountForContacts] = useState<Accounts | null>(null)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [detailsAccount, setDetailsAccount] = useState<Accounts | null>(null)
+
+  // Handle deep link: open account details modal
+  useEffect(() => {
+    const accountId = searchParams.get('accountId')
+    if (accountId && accounts.length > 0) {
+      const account = accounts.find((a) => a.accountid === accountId)
+      if (account) {
+        setDetailsAccount(account)
+        setIsDetailsModalOpen(true)
+        // Remove the query param so refreshing doesn't re-trigger
+        searchParams.delete('accountId')
+        setSearchParams(searchParams, { replace: true })
+      }
+    }
+  }, [accounts, searchParams])
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -71,13 +91,14 @@ export function Customers() {
 
   // Handle save account
   const handleSaveAccount = (updatedAccount: Accounts) => {
-    // Here you would typically call an API to update the account
-    console.log('Saving account:', updatedAccount)
     // Update the account in the accounts array
     setAccounts(
       accounts.map((acc) => (acc.accountid === updatedAccount.accountid ? updatedAccount : acc))
     )
-    // In a real app, you'd call an API here
+    // Refresh the details pane with updated data
+    if (detailsAccount?.accountid === updatedAccount.accountid) {
+      setDetailsAccount({ ...updatedAccount })
+    }
   }
 
   return (
@@ -107,6 +128,10 @@ export function Customers() {
               accounts={accounts}
               onEditAccount={handleEditAccount}
               onViewContacts={handleViewContacts}
+              onViewDetails={(account) => {
+                setDetailsAccount(account)
+                setIsDetailsModalOpen(true)
+              }}
             />
           )}
         </div>
@@ -125,6 +150,21 @@ export function Customers() {
         account={selectedAccountForContacts}
         isOpen={isContactsPaneOpen}
         onOpenChange={setIsContactsPaneOpen}
+      />
+
+      {/* Account Details Modal (deep link) */}
+      <AccountDetailsModal
+        account={detailsAccount}
+        isOpen={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        onEditAccount={(account) => {
+          setSelectedAccount(account)
+          setIsModalOpen(true)
+        }}
+        onManageContacts={(account) => {
+          setSelectedAccountForContacts(account)
+          setIsContactsPaneOpen(true)
+        }}
       />
     </div>
   )
