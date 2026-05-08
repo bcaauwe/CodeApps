@@ -59,8 +59,7 @@ const createColoredMarkerIcon = (color: string) => {
       <circle cx="16" cy="12" r="4" fill="white"/>
     </svg>
   `
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
-  const svgUrl = URL.createObjectURL(svgBlob)
+  const svgUrl = `data:image/svg+xml,${encodeURIComponent(svgString)}`
   
   return L.icon({
     iconUrl: svgUrl,

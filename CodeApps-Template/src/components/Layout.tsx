@@ -8,6 +8,8 @@ import { AgentPanel } from './AgentPanel'
 import { Office365UsersService } from '../generated/services/Office365UsersService'
 import type { GraphUser_V1 } from '../generated/models/Office365UsersModel'
 import type { NavItem, LayoutProps } from '../types/LayoutTypes'
+import powerAppsIcon from '../assets/PowerApps.png'
+import copilotStudioIcon from '../assets/CopilotStudio-26.png'
 
 const useStyles = makeStyles({
   root: {
@@ -551,7 +553,7 @@ export default function Layout({ children }: LayoutProps) {
 
         <div className={styles.headerCenter}>
           <img 
-            src="/PowerApps.png" 
+            src={powerAppsIcon} 
             alt="Power Apps" 
             style={{ 
               width: '28px', 
@@ -613,7 +615,7 @@ export default function Layout({ children }: LayoutProps) {
             title="Agent"
             icon={
               <img
-                src="/CopilotStudio-26.png"
+                src={copilotStudioIcon}
                 alt="Copilot Studio"
                 style={{ width: '24px', height: '24px' }}
               />

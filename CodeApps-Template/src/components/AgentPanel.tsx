@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { MicrosoftCopilotStudioService } from '../generated/services/MicrosoftCopilotStudioService'
 import type { AgentPanelProps, ChatMessage } from '../types/AgentPanelTypes'
+import copilotStudioIcon from '../assets/CopilotStudio-26.png'
 
 const useStyles = makeStyles({
   sidecarContainer: {
@@ -239,7 +240,7 @@ export function AgentPanel({ open, onOpenChange }: AgentPanelProps) {
         <div className={styles.sidecarHeader}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <img
-              src="/CopilotStudio-26.png"
+              src={copilotStudioIcon}
               alt="Copilot Studio"
               style={{ width: '28px', height: '28px' }}
             />
