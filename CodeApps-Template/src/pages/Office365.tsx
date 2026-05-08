@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Office365UsersService } from '../generated/services/Office365UsersService';
 import type { User } from '../generated/models/Office365UsersModel';
 import { Office365OutlookService } from '../generated/services/Office365OutlookService';
+import { MicrosoftTeamsService } from '../generated/services/MicrosoftTeamsService';
 import { GlobalCountryHolidaysService } from '../generated/services/GlobalCountryHolidaysService';
 import type { GlobalCountryHolidaysRead } from '../generated/models/GlobalCountryHolidaysModel';
 import { useTheme } from '../hooks/useTheme';
@@ -453,9 +454,42 @@ export function Office365() {
   const handleTeamsMessage = async () => {
     if (selectedUserForChat && teamsMessage) {
       try {
-        console.log('Teams integration not yet configured');
-        setSelectedUserForChat(null);
-        setTeamsMessage('');
+        // First, create a chat to get the conversation ID
+        const chatResult = await MicrosoftTeamsService.CreateChat({
+          members: selectedUserForChat.Id || selectedUserForChat.UserPrincipalName || selectedUserForChat.Mail || ''
+        });
+        
+        if (!chatResult.success) {
+          throw new Error(chatResult.error?.message || 'Failed to create chat');
+        }
+        
+        // Extract the chat ID from the response
+        const chatId = (chatResult.data as any)?.id || (chatResult.data as any)?.chatId;
+        
+        if (!chatId) {
+          throw new Error('No chat ID received from CreateChat');
+        }
+        
+        // Now post the message to the conversation
+        const messageBody: any = {
+          messageBody: teamsMessage,
+          recipient: chatId
+        };
+        
+        const messageResult = await MicrosoftTeamsService.PostMessageToConversation(
+          messageBody,
+          "User",
+          "Group Chat"
+        );
+        
+        if (messageResult.success) {
+          // Reset form after sending
+          setSelectedUserForChat(null);
+          setTeamsMessage('');
+          // alert('Message sent successfully!');
+        } else {
+          throw new Error(messageResult.error?.message || 'Failed to send message');
+        }
       } catch (error) {
         console.error('Error sending Teams message:', error);
         alert('Failed to send message: ' + (error instanceof Error ? error.message : 'Unknown error'));

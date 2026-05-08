@@ -18,7 +18,7 @@ This template provides a minimal setup to get a Code App running for demonstrati
 
 - Dataverse enabled
 - Code Apps enabled
-- Import solution CodeAppsTemplate (includes)
+- Import solution CodeAppsTemplateBase from the solutions folder (includes)
   - TMDB Custom Connector
   - API Key environment variable
   - Cloud flow to obtain API key environment variable value
