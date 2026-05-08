@@ -20,15 +20,15 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '32px',
+    gap: '4px',
     height: '32px',
-    padding: 0,
+    padding: '0 8px',
     background: tokens.colorNeutralBackground3,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: '4px',
     cursor: 'pointer',
     color: tokens.colorNeutralForeground1,
-    fontSize: '18px',
+    fontSize: '13px',
     transition: 'all 0.2s ease',
     flexShrink: 0,
     ':hover': {
@@ -336,6 +336,16 @@ export function AccountsMap({ accounts, onViewDetails }: AccountsMapProps) {
     <div className="accounts-map-wrapper">
       <div className="map-filters-bar">
         <FilterRegular className={styles.filterIcon} />
+        {(selectedState || selectedRevenue) && (
+          <button
+            onClick={handleClearFilters}
+            className={styles.clearButton}
+            title="Clear all filters"
+          >
+            <DismissRegular />
+            Clear Filter
+          </button>
+        )}
         <div className="filter-item">
           <label className="filter-field-label">State</label>
           <Combobox
@@ -369,15 +379,6 @@ export function AccountsMap({ accounts, onViewDetails }: AccountsMapProps) {
             ))}
           </Combobox>
         </div>
-        {(selectedState || selectedRevenue) && (
-          <button
-            onClick={handleClearFilters}
-            className={styles.clearButton}
-            title="Clear all filters"
-          >
-            <DismissRegular />
-          </button>
-        )}
       </div>
       <div ref={containerRef} className="map-container-root" />
     </div>

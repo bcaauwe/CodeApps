@@ -261,8 +261,9 @@
 
 .filter-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   min-width: 200px;
 }
 
@@ -272,6 +273,7 @@
   color: var(--colorNeutralForeground1, #3b3b3b);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .filter-dropdown {

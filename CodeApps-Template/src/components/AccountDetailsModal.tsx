@@ -203,7 +203,7 @@ export function AccountDetailsModal({ account, isOpen, onOpenChange, onEditAccou
           jobTitle: contact.jobtitle || '',
         }))
         const recordContext = accountContacts.length > 0
-          ? JSON.stringify({ relatedContacts: accountContacts })
+          ? JSON.stringify({ contacts: accountContacts })
           : undefined
 
         const result = await AISummarizeRecordService.AISummarizeRecord('account', account.accountid, true, recordContext)

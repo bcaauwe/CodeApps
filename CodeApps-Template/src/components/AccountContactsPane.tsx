@@ -24,7 +24,7 @@ const useStyles = makeStyles({
     top: '0',
     right: '0',
     bottom: '0',
-    width: '420px',
+    width: '480px',
     background: tokens.colorNeutralBackground1,
     boxShadow: '-4px 0 16px rgba(0, 0, 0, 0.15)',
     zIndex: '10000',
