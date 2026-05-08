@@ -390,7 +390,6 @@ export function Office365() {
         const result = await Office365OutlookService.V4CalendarPostItem('Calendar', eventData);
         
         if (result.success) {
-          console.log('Holiday added to calendar successfully:', result.data);
           setSelectedHolidayForCalendar(null);
           setCalendarTitle('');
           setCalendarDate('');
@@ -398,7 +397,6 @@ export function Office365() {
           setCalendarStartTime('09:00');
           setCalendarEndTime('17:00');
           setCalendarIsAllDay(false);
-          alert('Holiday successfully added to your calendar!');
         } else {
           throw new Error(result.error?.message || 'Failed to add event to calendar');
         }
@@ -511,8 +509,6 @@ export function Office365() {
         });
 
         if (result.success) {
-          console.log('Email sent successfully');
-          
           setSelectedUserForEmail(null);
           setEmailSubject('');
           setEmailBody('');
