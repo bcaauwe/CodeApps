@@ -45,6 +45,7 @@ This template provides a minimal setup to get a Code App running for demonstrati
   - Dataverse
   - TMDB (custom connector)
 - Content Security Policy (CSP)
+
 In order for images (e.g. TMDB movie posters, OpenStreetMap tiles) and embedded videos (e.g. YouTube trailers) to render properly, you must update the Content Security Policy settings in the **Power Platform Admin Center** for your environment.
 
 Navigate to **Environments → \<your environment\> → Settings → Product → Privacy + Security → Content Security Policy** and configure the following:
