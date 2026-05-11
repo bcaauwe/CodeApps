@@ -105,7 +105,7 @@ npx power-apps add-data-source --api-id shared_teams --connection-id <your-teams
 ##### Microsoft SharePoint - Global Country Holidays
 
 ```bash
-npx power-apps add-data-source --api-id shared_sharepointonline --connection-id <your-sharepoint-connectionid> --dataset <your-sharepoint-site-url> --resource-name <your-sharepoint-list-name>
+npx power-apps add-data-source --api-id shared_sharepointonline --connection-id <your-sharepoint-connectionid> --dataset <your-sharepoint-site-url> --resource-name "Global Country Holidays"
 ```
 
 #### 2b. Dataverse tables
