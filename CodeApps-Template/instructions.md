@@ -33,6 +33,13 @@
   - API Key environment variable
   - Cloud flow to obtain API key environment variable value
   - Copilot Studio agent
+
+When importing the solution, you need to enter your Azure Key Vault path.  The pattern is:
+
+```typescript
+/subscriptions/<subscription-id>/resourceGroups/<resourceGroup-Name>/providers/Microsoft.KeyVault/vaults/<key-vault-name>/secrets/<secret-name>
+```
+
 - Connections configured for:
   - Office 365 Outlook
   - Office 365 Users
@@ -48,7 +55,7 @@ Navigate to **Environments → \<your environment\> → Settings → Product →
 
 | Directive | Use Default | Sources |
 |---|---|---|
-| **img-src** | Off | `http://*.tmdb.org` `https://*.youtube.com` `https://*.openstreetmap.org` |
+| **img-src** | Off | `http://*.tmdb.org` `https://*.youtube.com` `https://*.openstreetmap.org` `https://*.cartocdn.com` |
 | **frame-src** | Off | `https://*.youtube.com` |
 
 > **Note:** After updating these settings, it may take a few minutes for the changes to take effect.
