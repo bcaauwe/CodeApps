@@ -32,7 +32,7 @@
   - TMDB Custom Connector
   - API Key environment variable
   - Cloud flow to obtain API key environment variable value
-  - Copilot Studio agent
+  - Copilot Studio agent: Manually publish agent after importing solution
 
 When importing the solution, you need to enter your Azure Key Vault path.  The pattern is:
 
@@ -40,14 +40,19 @@ When importing the solution, you need to enter your Azure Key Vault path.  The p
 /subscriptions/<subscription-id>/resourceGroups/<resourceGroup-Name>/providers/Microsoft.KeyVault/vaults/<key-vault-name>/secrets/<secret-name>
 ```
 
-- Connections configured for:
+### Connections
+
+Configure connections for:
   - Office 365 Outlook
   - Office 365 Users
   - Microsoft Teams
   - SharePoint Online
   - Dataverse
   - TMDB (custom connector)
-- Content Security Policy (CSP)
+  - Copilot Studio
+  - SQL Server: Authentication Type = Microsoft Entra ID Integration 
+
+### Content Security Policies
 
 In order for images (e.g. TMDB movie posters, OpenStreetMap tiles) and embedded videos (e.g. YouTube trailers) to render properly, you must update the Content Security Policy settings in the **Power Platform Admin Center** for your environment.
 
@@ -156,7 +161,7 @@ npx power-apps add-data-source --api-id <your-tmdb-custom-connector-api-id> --co
 For movie reviews, you will need an Azure SQL Database using Entra ID authentication.
 
 ```bash
-npx power-apps add-data-source --api-id shared_sql --connection-id <your-sqlconnector-id> --dataset <yourSQLServer.database.windows.net>,movieReviews --resource-name "[dbo].[Reviews]" --org-url <your-org-url>
+npx power-apps add-data-source --api-id shared_sql --connection-id <your-sqlconnector-id> --dataset <yourSQLServer.database.windows.net>,<databaseName> --resource-name "[dbo].[Reviews]"
 ```
 
 #### 2e. Copilot Studio
@@ -164,7 +169,7 @@ npx power-apps add-data-source --api-id shared_sql --connection-id <your-sqlconn
 For the agent panel, you will need a Copilot Studio connection to connect to the agent provided in the [`CodeAppsTemplateBase_1_0_0_0.zip`](solutions/CodeAppsTemplateBase_1_0_0_0.zip) solution. 
 
 ```bash
-npx power-apps add-data-source --api-id shared_microsoftcopilotstudio --connection-id <your-copilotStudioConnector-id> --org-url <your-org-url>
+npx power-apps add-data-source --api-id shared_microsoftcopilotstudio --connection-id <your-copilotStudioConnector-id>
 ```
 
 The sample code uses the agent name from the solution, but you can change the agent by updating the `AGENT_NAME` variable in [`src/components/AgentPanel.tsx`](src/components/AgentPanel.tsx):
@@ -178,7 +183,7 @@ const AGENT_NAME = 'gbb_CodeAppsAgent'
 Run the following command to find the Power Automate flow IDs needed to register in the Code App
 
 ```bash
-npx power-apps list-flows --search GetAPIKey
+npx power-apps list-flows --search "Get TMDB API Key"
 ```
 
 Run the following command to register the needed Power Automate flows
