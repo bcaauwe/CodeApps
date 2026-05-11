@@ -176,7 +176,7 @@ npx power-apps add-flow --flow-id <flow-id>
 
 ### 4. Add Dataverse Actions
 
-Run the following command to register the dataverse action `AISummarizeRecord` which is used to show an AI Summary on the ['AccountDetailsModal.tsx](/src/components/AccountDetailsModal.tsx) component
+Run the following command to register the dataverse action `AISummarizeRecord` which is used to show an AI Summary on the [AccountDetailsModal.tsx](src/components/AccountDetailsModal.tsx) component
 
 ```bash
 npx power-apps add-dataverse-api --api-name AISummarizeRecord
