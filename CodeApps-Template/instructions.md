@@ -57,14 +57,20 @@ Navigate to **Environments → \<your environment\> → Settings → Product →
 
 ### 1. Initialization
 
-Clone this repository, navigate to the project folder
+Clone this project template and navigate to the folder
+
+```bash
+npx degit github:bcaauwe/CodeApps/CodeApps-Template my-appTemplate
+cd my-appTemplate
+```
+
+---
 
 #### 1a. Install dependencies
 
-Make sure you are in the CodeApps-Template folder and use NPM install
+Make sure you are in the project folder and use NPM install
 
 ```bash
-cd CodeApps-Template
 npm install
 ```
 
