@@ -475,9 +475,9 @@ export function Office365() {
         };
         
         const messageResult = await MicrosoftTeamsService.PostMessageToConversation(
-          messageBody,
           "User",
-          "Group Chat"
+          "Group Chat",
+          messageBody
         );
         
         if (messageResult.success) {
