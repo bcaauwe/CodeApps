@@ -5,16 +5,6 @@
 - [Node.js LTS](https://nodejs.org/)
 - [Git](https://git-scm.com/)
 
-### Authentication
-
-The `npx power-apps` commands authenticate via your **default browser profile**. The first time you run any command, a browser window will open to process the authentication.
-
-> **Connecting to a different tenant?** If you need to authenticate with a tenant that doesn't match your default browser's signed-in account:
->
-> 1. Run `npx power-apps logout` to clear the current session.
-> 2. Set a different browser as your system default (e.g. Edge Beta) — one where only the target tenant credentials are signed in.
-> 3. Run any `npx power-apps` command again. Authentication will now open in the new default browser.
-
 ## Resource Requirements
 
 - Azure Key Vault - for Custom Connector API Key
@@ -57,10 +47,12 @@ Configure connections for:
   - Office 365 Users
   - Microsoft Teams
   - SharePoint Online
-  - Dataverse
   - TMDB (custom connector)
   - Copilot Studio
   - SQL Server: Authentication Type = Microsoft Entra ID Integration 
+  - Dataverse
+  - Work IQ Copilot MCP
+  - Work IQ User MCP
 
 ### Content Security Policies
 
@@ -76,6 +68,14 @@ Navigate to **Environments → \<your environment\> → Settings → Product →
 > **Note:** After updating these settings, it may take a few minutes for the changes to take effect.
 
 ## Getting Started
+
+The `npx power-apps` commands authenticate via your **default browser profile**. The first time you run any command, a browser window will open to process the authentication.
+
+> **Connecting to a different tenant?** If you need to authenticate with a tenant that doesn't match your default browser's signed-in account:
+>
+> 1. Run `npx power-apps logout` to clear the current session.
+> 2. Set a different browser as your system default (e.g. Edge Beta) — one where only the target tenant credentials are signed in.
+> 3. Run any `npx power-apps` command again. Authentication will now open in the new default browser.
 
 ### 1. Initialization
 
