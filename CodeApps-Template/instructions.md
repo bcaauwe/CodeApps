@@ -28,6 +28,7 @@
 
 - Dataverse enabled
 - Code Apps enabled
+- Dataverse MCP (Preview) enabled
 - Import solution [`CodeAppsTemplateBase_1_0_0_0.zip`](solutions/CodeAppsTemplateBase_1_0_0_0.zip) (includes)
   - TMDB Custom Connector
   - API Key environment variable
