@@ -206,7 +206,7 @@ export function AccountDetailsModal({ account, isOpen, onOpenChange, onEditAccou
           ? JSON.stringify({ contacts: accountContacts })
           : undefined
 
-        const result = await AISummarizeRecordService.AISummarizeRecord('account', account.accountid, true, recordContext)
+        const result = await AISummarizeRecordService.AISummarizeRecord('account', account.accountid, recordContext, true)
         const data = result?.data as any
         const summaryText = data?.SummarizedText || data?.summary || 'No summary available.'
         setSummary(marked.parse(summaryText) as string)
