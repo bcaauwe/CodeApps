@@ -233,8 +233,8 @@ This compiles TypeScript and bundles the app into the `dist` folder.
 
 ### 7. Push to Power Platform
 
-When ready to deploy you can push the app into a specific solution by specifying the solution name. The solution must already exist in your environment:
+When ready to deploy you can push the app to the managed host.
 
 ```bash
-npx power-apps push --solution-name <your-solution-name>
+npx power-apps push
 ```
