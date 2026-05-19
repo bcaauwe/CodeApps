@@ -1,5 +1,12 @@
 # Code Apps Demo Template
 
+> [!IMPORTANT]
+> 🤖 **AI-Generated Code Notice**
+>
+> This template was generated using GitHub Copilot to demonstrate AI-assisted development workflows with Power Apps Code Apps. The code has been created for **educational and demonstration purposes only** and has not undergone detailed manual code review or security auditing.
+>
+> Please use this sample at your own risk and ensure proper code review, testing, and security validation before using any patterns or code in production environments.
+
 This template provides a minimal setup to get a Code App running for demonstration with live data sources.
 
 See [instructions.md](instructions.md) for all prerequisites and getting started cloning this project.
