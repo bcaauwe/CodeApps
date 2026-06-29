@@ -1,0 +1,3 @@
+"Key","Label","Description","Type","Category","Value"
+"workingDaysPerMonth","Working Days per Month","Days used in the calculation of an estimate","number","General","22"
+"appTitle","Application Title","The title used for the application","text","General","Copilot Credit Calculator"
