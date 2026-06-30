@@ -11,7 +11,8 @@ import {
   MenuList,
   MenuItem,
 } from '@fluentui/react-components';
-import { WeatherMoon24Regular, WeatherSunny24Regular, Settings24Regular, People24Regular, Money24Regular, Options24Regular, Apps24Regular } from '@fluentui/react-icons';
+import { WeatherMoon24Regular, WeatherSunny24Regular, Settings24Regular, People24Regular, Money24Regular, Options24Regular, Apps24Regular, Warning16Regular } from '@fluentui/react-icons';
+import { useConfigurationStatus } from './hooks/useConfigurationStatus';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './hooks/useTheme';
 import { ToolSelector, type ProductItem } from './components/ToolSelector';
@@ -309,6 +310,8 @@ const AppContent: React.FC = () => {
 
   const activeEstimate = currentEstimates[activeToolId] ?? null;
 
+  const configStatus = useConfigurationStatus();
+
   const canCreateCalculatorSetting = userPrivileges
     ? ((userPrivileges.RolePrivileges as Array<Record<string, unknown>>) ?? []).some(
         (priv) => priv.PrivilegeName === 'prvCreategbb_CalculatorSetting',
@@ -332,16 +335,16 @@ const AppContent: React.FC = () => {
             <MenuPopover>
               <MenuList>
                 <MenuItem icon={<People24Regular />} onClick={() => setPage('admin-personas')}>
-                  Personas
+                  Personas {configStatus.personas === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
                 <MenuItem icon={<Money24Regular />} onClick={() => setPage('admin-pricing')}>
-                  Pricing
+                  Pricing {configStatus.pricing === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
                 <MenuItem icon={<Apps24Regular />} onClick={() => setPage('admin-products')}>
-                  Products
+                  Products {configStatus.products === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
                 <MenuItem icon={<Options24Regular />} onClick={() => setPage('calculator-settings')} disabled={canCreateCalculatorSetting === false}>
-                  Calculator Settings
+                  Calculator Settings {configStatus.calculatorSettings === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
               </MenuList>
             </MenuPopover>
@@ -363,21 +366,21 @@ const AppContent: React.FC = () => {
           />
         ) : page === 'admin-personas' ? (
           <AdminPersonas
-            onBack={() => { setPage('settings'); loadPersonas(); }}
+            onBack={() => { setPage('settings'); loadPersonas(); configStatus.refresh(); }}
             onPersonasChanged={loadPersonas}
           />
         ) : page === 'admin-pricing' ? (
           <AdminPricing
-            onBack={() => setPage('settings')}
+            onBack={() => { setPage('settings'); configStatus.refresh(); }}
           />
         ) : page === 'admin-products' ? (
           <AdminProducts
-            onBack={() => setPage('settings')}
+            onBack={() => { setPage('settings'); configStatus.refresh(); }}
             onProductsChanged={loadProducts}
           />
         ) : page === 'calculator-settings' ? (
           <CalculatorSettings
-            onBack={() => setPage('settings')}
+            onBack={() => { setPage('settings'); configStatus.refresh(); }}
             onSettingsChanged={(settings) => {
               for (const cat of settings) {
                 for (const item of (cat as any).items ?? []) {

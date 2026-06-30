@@ -12,7 +12,9 @@ import {
   Money24Regular,
   Options24Regular,
   Apps24Regular,
+  Warning16Regular,
 } from '@fluentui/react-icons';
+import { useConfigurationStatus } from '../hooks/useConfigurationStatus';
 
 interface SettingsHubProps {
   onNavigate: (page: 'admin-personas' | 'admin-pricing' | 'admin-products' | 'calculator-settings') => void;
@@ -69,10 +71,20 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
   },
+  configRequired: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    marginTop: tokens.spacingVerticalXS,
+    color: tokens.colorPaletteYellowForeground2,
+    fontSize: tokens.fontSizeBase200,
+    fontWeight: tokens.fontWeightSemibold,
+  },
 });
 
 export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, userPrivileges }) => {
   const styles = useStyles();
+  const configStatus = useConfigurationStatus();
 
   const rolePrivileges = userPrivileges
     ? (userPrivileges.RolePrivileges as Array<Record<string, unknown>>) ?? []
@@ -99,6 +111,12 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
             <div className={styles.cardText}>
               <Text className={styles.cardTitle}>Personas</Text>
               <Text className={styles.cardDescription}>Manage persona definitions and complexity levels</Text>
+              {configStatus.personas === false && (
+                <div className={styles.configRequired}>
+                  <Warning16Regular />
+                  <span>Configuration Required</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -109,6 +127,12 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
             <div className={styles.cardText}>
               <Text className={styles.cardTitle}>Pricing</Text>
               <Text className={styles.cardDescription}>Configure credit pricing models and tiers</Text>
+              {configStatus.pricing === false && (
+                <div className={styles.configRequired}>
+                  <Warning16Regular />
+                  <span>Configuration Required</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -119,6 +143,12 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
             <div className={styles.cardText}>
               <Text className={styles.cardTitle}>Products</Text>
               <Text className={styles.cardDescription}>Manage products used in credit calculations</Text>
+              {configStatus.products === false && (
+                <div className={styles.configRequired}>
+                  <Warning16Regular />
+                  <span>Configuration Required</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -129,6 +159,12 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
             <div className={styles.cardText}>
               <Text className={styles.cardTitle}>Calculator</Text>
               <Text className={styles.cardDescription}>Adjust calculator parameters like working days</Text>
+              {configStatus.calculatorSettings === false && (
+                <div className={styles.configRequired}>
+                  <Warning16Regular />
+                  <span>Configuration Required</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>
