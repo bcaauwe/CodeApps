@@ -9,11 +9,18 @@ import {
   Option,
   Button,
   Spinner,
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Delete24Regular, ArrowDownload24Regular, Save24Regular, Dismiss24Regular } from '@fluentui/react-icons';
+import { Delete24Regular, ArrowDownload24Regular, Save24Regular, Dismiss24Regular, PersonSwap24Regular } from '@fluentui/react-icons';
 import type { Persona, EstimateRow, ComplexityKey } from '../types';
+import { iconMap } from '../data/icons';
 import { Gbb_calculatorpricingsService } from '../generated/services/Gbb_calculatorpricingsService';
 import type { Gbb_calculatorpricings } from '../generated/models/Gbb_calculatorpricingsModel';
 import { Gbb_calculatorpricingsgbb_billing as BillingLabels } from '../generated/models/Gbb_calculatorpricingsModel';
@@ -133,6 +140,45 @@ const useStyles = makeStyles({
   },
   bestValue: {
     backgroundColor: tokens.colorBrandBackground2,
+  },
+  personaPickerList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+    maxHeight: '300px',
+    overflowY: 'auto',
+  },
+  personaPickerItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
+  },
+  personaPickerItemSelected: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `2px solid ${tokens.colorBrandStroke1}`,
+    backgroundColor: tokens.colorBrandBackground2,
+    cursor: 'pointer',
+  },
+  personaPickerIcon: {
+    color: tokens.colorBrandForeground1,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  unknownPersona: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
   },
 });
 
@@ -267,6 +313,71 @@ function formatCredits(n: number): string {
   return String(n);
 }
 
+interface PersonaPickerDialogProps {
+  open: boolean;
+  personas: Persona[];
+  onSelect: (personaId: string) => void;
+  onClose: () => void;
+}
+
+const PersonaPickerDialog: React.FC<PersonaPickerDialogProps> = ({ open, personas, onSelect, onClose }) => {
+  const styles = useStyles();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) setSelectedId(null);
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={(_, data) => { if (!data.open) onClose(); }}>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>Select Persona</DialogTitle>
+          <DialogContent>
+            {personas.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: tokens.spacingVerticalXXL }}>
+                <Text style={{ color: tokens.colorNeutralForeground3 }}>No personas available for this product.</Text>
+              </div>
+            ) : (
+              <div className={styles.personaPickerList}>
+                {personas.map((p) => (
+                  <div
+                    key={p.id}
+                    className={selectedId === p.id ? styles.personaPickerItemSelected : styles.personaPickerItem}
+                    onClick={() => setSelectedId(p.id)}
+                  >
+                    <span className={styles.personaPickerIcon}>
+                      {iconMap[p.icon] ?? iconMap['Person']}
+                    </span>
+                    <div>
+                      <Text weight="semibold">{p.name}</Text>
+                      {p.bullets.length > 0 && (
+                        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }} block>
+                          {p.bullets[0]}
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button appearance="secondary" onClick={onClose}>Cancel</Button>
+            <Button
+              appearance="primary"
+              disabled={!selectedId}
+              onClick={() => { if (selectedId) onSelect(selectedId); }}
+            >
+              Select
+            </Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+};
+
 interface EstimateTableProps {
   rows: EstimateRow[];
   personas: Persona[];
@@ -275,7 +386,7 @@ interface EstimateTableProps {
   productId: string;
   currentEstimateId: string | null;
   currentEstimateName: string;
-  onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => void;
+  onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'personaId' | 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => void;
   onRemoveRow: (rowId: string) => void;
   onEstimateSaved: (estimateId: string, estimateName: string) => void;
   onEstimateLoaded: (estimateId: string, estimateName: string, rows: EstimateRow[]) => void;
@@ -301,6 +412,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
   const styles = useStyles();
   const [pricingRecords, setPricingRecords] = useState<Gbb_calculatorpricings[]>([]);
   const [pricingLoading, setPricingLoading] = useState(true);
+  const [personaPickerRowId, setPersonaPickerRowId] = useState<string | null>(null);
 
   const loadPricing = useCallback(async () => {
     setPricingLoading(true);
@@ -599,10 +711,25 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
             {rows.map((row) => {
               const range = calcCreditsRange(row);
               const persona = getPersona(row.personaId);
+              const isUnknown = !persona;
               return (
                 <tr key={row.id}>
                   <td className={styles.td}>
-                    <Text weight="semibold">{persona?.name ?? 'Unknown'}</Text>
+                    {isUnknown ? (
+                      <div className={styles.unknownPersona}>
+                        <Text weight="semibold" style={{ color: tokens.colorPaletteRedForeground1 }}>Unknown</Text>
+                        <Button
+                          appearance="subtle"
+                          icon={<PersonSwap24Regular />}
+                          size="small"
+                          onClick={() => setPersonaPickerRowId(row.id)}
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    ) : (
+                      <Text weight="semibold">{persona.name}</Text>
+                    )}
                   </td>
                   <td className={styles.tdCenter}>
                     <Dropdown
@@ -762,6 +889,17 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           )}
         </Card>
       )}
+      <PersonaPickerDialog
+        open={personaPickerRowId !== null}
+        personas={personas}
+        onSelect={(personaId) => {
+          if (personaPickerRowId) {
+            onUpdateRow(personaPickerRowId, 'personaId', personaId);
+          }
+          setPersonaPickerRowId(null);
+        }}
+        onClose={() => setPersonaPickerRowId(null)}
+      />
     </div>
   );
 };

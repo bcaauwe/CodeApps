@@ -240,7 +240,7 @@ const AppContent: React.FC = () => {
   );
 
   const handleUpdateRow = useCallback(
-    (rowId: string, field: keyof Pick<EstimateRow, 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => {
+    (rowId: string, field: keyof Pick<EstimateRow, 'personaId' | 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => {
       setEstimateRows((prev) => ({
         ...prev,
         [activeToolId]: (prev[activeToolId] ?? []).map((row) =>
