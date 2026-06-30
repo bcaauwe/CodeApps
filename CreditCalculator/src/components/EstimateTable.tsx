@@ -436,6 +436,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
     const persona = getPersona(row.personaId);
     if (!persona) return { low: 0, high: 0 };
     const level = persona.complexity[row.complexityLevel];
+    if (!level) return { low: 0, high: 0 };
     const base = row.userCount * row.sessionsPerDay * workingDaysPerMonth;
     return {
       low: base * level.creditsPerSessionMin,
@@ -743,13 +744,14 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
                       }}
                       size="small"
                     >
-                      <Option value="low">Low</Option>
-                      <Option value="medium">Medium</Option>
-                      <Option value="high">High</Option>
-                      <Option value="veryHigh">Very High</Option>
+                      {(['low', 'medium', 'high', 'veryHigh'] as const)
+                        .filter((key) => persona?.complexity[key])
+                        .map((key) => (
+                          <Option key={key} value={key}>{complexityLabels[key]}</Option>
+                        ))}
                     </Dropdown>
                     <Text size={200} style={{ color: tokens.colorNeutralForeground3, marginTop: '2px' }}>
-                      {persona?.complexity[row.complexityLevel].creditsPerSessionMin ?? 0}–{persona?.complexity[row.complexityLevel].creditsPerSessionMax ?? 0} cr/session
+                      {persona?.complexity[row.complexityLevel]?.creditsPerSessionMin ?? 0}–{persona?.complexity[row.complexityLevel]?.creditsPerSessionMax ?? 0} cr/session
                     </Text>
                   </td>
                   <td className={styles.tdCenter}>

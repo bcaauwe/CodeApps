@@ -61,15 +61,8 @@ const COMPLEXITY_REVERSE: Record<number, keyof PersonaComplexity> = {
   803430003: 'veryHigh',
 };
 
-const defaultComplexity: PersonaComplexity = {
-  low: { creditsPerSessionMin: 0, creditsPerSessionMax: 0 },
-  medium: { creditsPerSessionMin: 0, creditsPerSessionMax: 0 },
-  high: { creditsPerSessionMin: 0, creditsPerSessionMax: 0 },
-  veryHigh: { creditsPerSessionMin: 0, creditsPerSessionMax: 0 },
-};
-
 function buildComplexityFromRecords(records: Gbb_calculatorpersonacomplexities[]): PersonaComplexity {
-  const result: PersonaComplexity = { ...defaultComplexity };
+  const result: PersonaComplexity = {};
   for (const rec of records) {
     const level = rec.gbb_complexity !== undefined ? COMPLEXITY_REVERSE[rec.gbb_complexity] : undefined;
     if (level) {

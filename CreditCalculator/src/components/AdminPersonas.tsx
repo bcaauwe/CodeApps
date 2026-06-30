@@ -41,7 +41,7 @@ import { Gbb_calculatorpersonasService } from '../generated/services/Gbb_calcula
 import { Gbb_calculatorpersonacomplexitiesService } from '../generated/services/Gbb_calculatorpersonacomplexitiesService';
 import type { Gbb_calculatorpersonas } from '../generated/models/Gbb_calculatorpersonasModel';
 import type { Gbb_calculatorpersonacomplexities } from '../generated/models/Gbb_calculatorpersonacomplexitiesModel';
-import type { PersonaComplexity } from '../types';
+import type { PersonaComplexity, ComplexityLevel } from '../types';
 import { ComplexityTooltip } from './ComplexityTooltip';
 
 interface AdminPersonasProps {
@@ -289,11 +289,19 @@ const useStyles = makeStyles({
   },
 });
 
-const defaultComplexity: PersonaComplexity = {
+const defaultComplexityValues: Record<keyof Required<PersonaComplexity>, ComplexityLevel> = {
   low: { creditsPerSessionMin: 10, creditsPerSessionMax: 20 },
   medium: { creditsPerSessionMin: 25, creditsPerSessionMax: 50 },
   high: { creditsPerSessionMin: 50, creditsPerSessionMax: 80 },
   veryHigh: { creditsPerSessionMin: 80, creditsPerSessionMax: 120 },
+};
+
+const ALL_COMPLEXITY_LEVELS: (keyof Required<PersonaComplexity>)[] = ['low', 'medium', 'high', 'veryHigh'];
+const COMPLEXITY_LABELS: Record<keyof Required<PersonaComplexity>, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  veryHigh: 'Very High',
 };
 
 interface DialogPersona {
@@ -304,6 +312,8 @@ interface DialogPersona {
   productId: string;
   complexity: PersonaComplexity;
 }
+
+type ComplexityLevelKey = keyof Required<PersonaComplexity>;
 
 const IconPicker: React.FC<{ value: string; onChange: (icon: string) => void }> = ({
   value,
@@ -373,7 +383,7 @@ const emptyDialogPersona: DialogPersona = {
   icon: 'Person',
   description: '',
   productId: '',
-  complexity: { ...defaultComplexity },
+  complexity: {},
 };
 
 const COMPLEXITY_MAP: Record<string, number> = {
@@ -391,7 +401,7 @@ const COMPLEXITY_REVERSE: Record<number, keyof PersonaComplexity> = {
 };
 
 function buildComplexityFromRecords(records: Gbb_calculatorpersonacomplexities[]): PersonaComplexity {
-  const result: PersonaComplexity = { ...defaultComplexity };
+  const result: PersonaComplexity = {};
   for (const rec of records) {
     const level = rec.gbb_complexity !== undefined ? COMPLEXITY_REVERSE[rec.gbb_complexity] : undefined;
     if (level) {
@@ -515,6 +525,8 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
   const handleDialogSave = async () => {
     setSaving(true);
     try {
+      const activeLevels = ALL_COMPLEXITY_LEVELS.filter((l) => dialogPersona.complexity[l]);
+
       if (editingRecord) {
         // Update existing persona
         await Gbb_calculatorpersonasService.update(editingRecord.gbb_calculatorpersonaid, {
@@ -524,24 +536,31 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
           "gbb_Product@odata.bind": `/gbb_calculatorproducts(${dialogPersona.productId})`,
         });
 
-        // Update complexities
+        // Update complexities - add/update active levels, delete removed ones
         const existingComplexities = complexities[editingRecord.gbb_calculatorpersonaid] ?? [];
         for (const [level, choiceValue] of Object.entries(COMPLEXITY_MAP)) {
-          const key = level as keyof PersonaComplexity;
+          const key = level as ComplexityLevelKey;
           const existing = existingComplexities.find((c) => c.gbb_complexity === choiceValue);
-          if (existing) {
-            await Gbb_calculatorpersonacomplexitiesService.update(existing.gbb_calculatorpersonacomplexityid, {
-              gbb_minimum: dialogPersona.complexity[key].creditsPerSessionMin,
-              gbb_maximum: dialogPersona.complexity[key].creditsPerSessionMax,
-            });
-          } else {
-            await Gbb_calculatorpersonacomplexitiesService.create({
-              gbb_complexity: choiceValue as any,
-              gbb_minimum: dialogPersona.complexity[key].creditsPerSessionMin,
-              gbb_maximum: dialogPersona.complexity[key].creditsPerSessionMax,
-              "gbb_Persona@odata.bind": `/gbb_calculatorpersonas(${editingRecord.gbb_calculatorpersonaid})`,
-              statecode: 0,
-            });
+          const levelData = dialogPersona.complexity[key];
+
+          if (levelData) {
+            if (existing) {
+              await Gbb_calculatorpersonacomplexitiesService.update(existing.gbb_calculatorpersonacomplexityid, {
+                gbb_minimum: levelData.creditsPerSessionMin,
+                gbb_maximum: levelData.creditsPerSessionMax,
+              });
+            } else {
+              await Gbb_calculatorpersonacomplexitiesService.create({
+                gbb_complexity: choiceValue as any,
+                gbb_minimum: levelData.creditsPerSessionMin,
+                gbb_maximum: levelData.creditsPerSessionMax,
+                "gbb_Persona@odata.bind": `/gbb_calculatorpersonas(${editingRecord.gbb_calculatorpersonaid})`,
+                statecode: 0,
+              });
+            }
+          } else if (existing) {
+            // Level was removed - delete the record
+            await Gbb_calculatorpersonacomplexitiesService.delete(existing.gbb_calculatorpersonacomplexityid);
           }
         }
       } else {
@@ -556,13 +575,14 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
 
         const newId = createResult.data?.gbb_calculatorpersonaid;
         if (newId) {
-          // Create complexity records
-          for (const [level, choiceValue] of Object.entries(COMPLEXITY_MAP)) {
-            const key = level as keyof PersonaComplexity;
+          // Create complexity records only for active levels
+          for (const level of activeLevels) {
+            const choiceValue = COMPLEXITY_MAP[level];
+            const levelData = dialogPersona.complexity[level]!;
             await Gbb_calculatorpersonacomplexitiesService.create({
               gbb_complexity: choiceValue as any,
-              gbb_minimum: dialogPersona.complexity[key].creditsPerSessionMin,
-              gbb_maximum: dialogPersona.complexity[key].creditsPerSessionMax,
+              gbb_minimum: levelData.creditsPerSessionMin,
+              gbb_maximum: levelData.creditsPerSessionMax,
               "gbb_Persona@odata.bind": `/gbb_calculatorpersonas(${newId})`,
               statecode: 0,
             });
@@ -579,14 +599,31 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
     }
   };
 
-  const updateDialogComplexity = (level: 'low' | 'medium' | 'high' | 'veryHigh', field: 'creditsPerSessionMin' | 'creditsPerSessionMax', value: number) => {
+  const updateDialogComplexity = (level: ComplexityLevelKey, field: 'creditsPerSessionMin' | 'creditsPerSessionMax', value: number) => {
     setDialogPersona((p) => ({
       ...p,
       complexity: {
         ...p.complexity,
-        [level]: { ...p.complexity[level], [field]: value },
+        [level]: { ...(p.complexity[level] ?? { creditsPerSessionMin: 0, creditsPerSessionMax: 0 }), [field]: value },
       },
     }));
+  };
+
+  const addComplexityLevel = (level: ComplexityLevelKey) => {
+    setDialogPersona((p) => ({
+      ...p,
+      complexity: {
+        ...p.complexity,
+        [level]: { ...defaultComplexityValues[level] },
+      },
+    }));
+  };
+
+  const removeComplexityLevel = (level: ComplexityLevelKey) => {
+    setDialogPersona((p) => {
+      const { [level]: _, ...rest } = p.complexity;
+      return { ...p, complexity: rest };
+    });
   };
 
   const getProductName = useCallback((productId?: string) => {
@@ -663,14 +700,14 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
         getProductName(p._gbb_product_value),
         p.gbb_icon ?? 'Person',
         p.gbb_description ?? '',
-        String(c.low.creditsPerSessionMin),
-        String(c.low.creditsPerSessionMax),
-        String(c.medium.creditsPerSessionMin),
-        String(c.medium.creditsPerSessionMax),
-        String(c.high.creditsPerSessionMin),
-        String(c.high.creditsPerSessionMax),
-        String(c.veryHigh.creditsPerSessionMin),
-        String(c.veryHigh.creditsPerSessionMax),
+        String(c.low?.creditsPerSessionMin ?? ''),
+        String(c.low?.creditsPerSessionMax ?? ''),
+        String(c.medium?.creditsPerSessionMin ?? ''),
+        String(c.medium?.creditsPerSessionMax ?? ''),
+        String(c.high?.creditsPerSessionMin ?? ''),
+        String(c.high?.creditsPerSessionMax ?? ''),
+        String(c.veryHigh?.creditsPerSessionMin ?? ''),
+        String(c.veryHigh?.creditsPerSessionMax ?? ''),
       ];
     });
     const csvContent = [headers, ...rows]
@@ -799,13 +836,16 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
               { level: 'veryHigh', choiceValue: COMPLEXITY_MAP.veryHigh, min: vhMinIdx >= 0 ? Number(cols[vhMinIdx]) || 0 : 0, max: vhMaxIdx >= 0 ? Number(cols[vhMaxIdx]) || 0 : 0 },
             ];
             for (const cd of complexityData) {
-              await Gbb_calculatorpersonacomplexitiesService.create({
-                gbb_complexity: cd.choiceValue as any,
-                gbb_minimum: cd.min,
-                gbb_maximum: cd.max,
-                "gbb_Persona@odata.bind": `/gbb_calculatorpersonas(${newId})`,
-                statecode: 0 as const,
-              });
+              // Only create complexity records that have actual values
+              if (cd.min > 0 || cd.max > 0) {
+                await Gbb_calculatorpersonacomplexitiesService.create({
+                  gbb_complexity: cd.choiceValue as any,
+                  gbb_minimum: cd.min,
+                  gbb_maximum: cd.max,
+                  "gbb_Persona@odata.bind": `/gbb_calculatorpersonas(${newId})`,
+                  statecode: 0 as const,
+                });
+              }
             }
           }
           successCount++;
@@ -997,52 +1037,95 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
 
               <Divider style={{ margin: `${tokens.spacingVerticalM} 0` }} />
 
-              <Text className={styles.fieldLabel} style={{ marginBottom: tokens.spacingVerticalS, display: 'inline-flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
-                Credits per Session (Min – Max)
-                <ComplexityTooltip />
-              </Text>
-              <div className={styles.intensityGrid}>
-                {(['low', 'medium', 'high', 'veryHigh'] as const).map((level) => {
-                  const min = dialogPersona.complexity[level].creditsPerSessionMin;
-                  const max = dialogPersona.complexity[level].creditsPerSessionMax;
-                  const hasError = max <= min;
-                  return (
-                  <div key={level} className={styles.intensityColumn}>
-                    <Text className={styles.intensityLabel}>
-                      {level === 'veryHigh' ? 'Very High' : level.charAt(0).toUpperCase() + level.slice(1)}
-                    </Text>
-                    <div className={styles.intensityRow}>
-                      <Input
-                        className={styles.intensityInput}
-                        type="number"
-                        value={String(dialogPersona.complexity[level].creditsPerSessionMin)}
-                        onChange={(_, data) =>
-                          updateDialogComplexity(level, 'creditsPerSessionMin', Number(data.value) || 0)
-                        }
-                      />
-                      <Text size={200}>–</Text>
-                      <Input
-                        className={styles.intensityInput}
-                        type="number"
-                        value={String(dialogPersona.complexity[level].creditsPerSessionMax)}
-                        onChange={(_, data) =>
-                          updateDialogComplexity(level, 'creditsPerSessionMax', Number(data.value) || 0)
-                        }
-                      />
-                    </div>
-                    {hasError && (
-                      <Text className={styles.intensityError}>Max must be greater than Min</Text>
-                    )}
-                  </div>
-                  );
-                })}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacingVerticalS }}>
+                <Text className={styles.fieldLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
+                  Credits per Session (Min – Max)<span className={styles.requiredIndicator}> *</span>
+                  <ComplexityTooltip />
+                </Text>
+                {ALL_COMPLEXITY_LEVELS.filter((l) => !dialogPersona.complexity[l]).length > 0 && (
+                  <Dropdown
+                    placeholder="Add complexity level..."
+                    selectedOptions={[]}
+                    value=""
+                    onOptionSelect={(_, data) => {
+                      if (data.optionValue) {
+                        addComplexityLevel(data.optionValue as ComplexityLevelKey);
+                      }
+                    }}
+                    size="small"
+                    style={{ minWidth: '180px' }}
+                  >
+                    {ALL_COMPLEXITY_LEVELS.filter((l) => !dialogPersona.complexity[l]).map((l) => (
+                      <Option key={l} value={l}>{COMPLEXITY_LABELS[l]}</Option>
+                    ))}
+                  </Dropdown>
+                )}
               </div>
+              {(() => {
+                const activeLevels = ALL_COMPLEXITY_LEVELS.filter((l) => dialogPersona.complexity[l]);
+                if (activeLevels.length === 0) {
+                  return (
+                    <Text size={200} style={{ color: tokens.colorNeutralForeground3, fontStyle: 'italic' }}>
+                      No complexity levels added. Use the dropdown above to add levels.
+                    </Text>
+                  );
+                }
+                return (
+                  <div className={styles.intensityGrid} style={{ gridTemplateColumns: `repeat(${activeLevels.length}, 1fr)` }}>
+                    {activeLevels.map((level) => {
+                      const levelData = dialogPersona.complexity[level]!;
+                      const min = levelData.creditsPerSessionMin;
+                      const max = levelData.creditsPerSessionMax;
+                      const hasError = max <= min;
+                      return (
+                        <div key={level} className={styles.intensityColumn}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
+                            <Text className={styles.intensityLabel}>
+                              {COMPLEXITY_LABELS[level]}
+                            </Text>
+                            <Button
+                              appearance="subtle"
+                              size="small"
+                              icon={<Delete24Regular />}
+                              onClick={() => removeComplexityLevel(level)}
+                              aria-label={`Remove ${COMPLEXITY_LABELS[level]}`}
+                              style={{ minWidth: 'auto', padding: '2px' }}
+                            />
+                          </div>
+                          <div className={styles.intensityRow}>
+                            <Input
+                              className={styles.intensityInput}
+                              type="number"
+                              value={String(min)}
+                              onChange={(_, data) =>
+                                updateDialogComplexity(level, 'creditsPerSessionMin', Number(data.value) || 0)
+                              }
+                            />
+                            <Text size={200}>–</Text>
+                            <Input
+                              className={styles.intensityInput}
+                              type="number"
+                              value={String(max)}
+                              onChange={(_, data) =>
+                                updateDialogComplexity(level, 'creditsPerSessionMax', Number(data.value) || 0)
+                              }
+                            />
+                          </div>
+                          {hasError && (
+                            <Text className={styles.intensityError}>Max must be greater than Min</Text>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </DialogContent>
             <DialogActions>
               <DialogTrigger disableButtonEnhancement>
                 <Button appearance="secondary">Cancel</Button>
               </DialogTrigger>
-              <Button appearance="primary" onClick={handleDialogSave} disabled={saving || !dialogPersona.name.trim() || !dialogPersona.productId || (['low', 'medium', 'high', 'veryHigh'] as const).some((l) => dialogPersona.complexity[l].creditsPerSessionMax <= dialogPersona.complexity[l].creditsPerSessionMin)}>
+              <Button appearance="primary" onClick={handleDialogSave} disabled={saving || !dialogPersona.name.trim() || !dialogPersona.productId || Object.keys(dialogPersona.complexity).length === 0 || ALL_COMPLEXITY_LEVELS.filter((l) => dialogPersona.complexity[l]).some((l) => dialogPersona.complexity[l]!.creditsPerSessionMax <= dialogPersona.complexity[l]!.creditsPerSessionMin)}>
                 {saving ? <Spinner size="tiny" /> : editingRecord ? 'Save' : 'Create'}
               </Button>
             </DialogActions>

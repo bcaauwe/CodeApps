@@ -6,10 +6,10 @@ export interface ComplexityLevel {
 }
 
 export interface PersonaComplexity {
-  low: ComplexityLevel;
-  medium: ComplexityLevel;
-  high: ComplexityLevel;
-  veryHigh: ComplexityLevel;
+  low?: ComplexityLevel;
+  medium?: ComplexityLevel;
+  high?: ComplexityLevel;
+  veryHigh?: ComplexityLevel;
 }
 
 export interface Persona {
