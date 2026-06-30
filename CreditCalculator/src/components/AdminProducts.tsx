@@ -36,6 +36,7 @@ import type { Gbb_calculatorproducts } from '../generated/models/Gbb_calculatorp
 
 interface AdminProductsProps {
   onBack: () => void;
+  onProductsChanged?: () => void;
 }
 
 type ProductFormData = {
@@ -211,7 +212,7 @@ const emptyFormData: ProductFormData = {
   gbb_complexitytooltip: '',
 };
 
-export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
+export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack, onProductsChanged }) => {
   const styles = useStyles();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -362,6 +363,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
       await Gbb_calculatorproductsService.delete(rec.gbb_calculatorproductid);
       setSelectedIndex(null);
       await loadRecords();
+      onProductsChanged?.();
     } catch (err) {
       console.error('Failed to delete product record:', err);
     } finally {
@@ -410,6 +412,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
       setPendingImagePreview(null);
       setDialogOpen(false);
       await loadRecords();
+      onProductsChanged?.();
     } catch (err) {
       console.error('Failed to save product record:', err);
     } finally {
@@ -586,6 +589,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
       }
 
       await loadRecords();
+      onProductsChanged?.();
       console.log(`[Import] Complete: ${successCount} succeeded, ${failCount} failed`);
       if (failCount > 0) {
         alert(`Import complete: ${successCount} succeeded, ${failCount} failed. Check console for details.`);

@@ -46,6 +46,7 @@ import { ComplexityTooltip } from './ComplexityTooltip';
 
 interface AdminPersonasProps {
   onBack: () => void;
+  onPersonasChanged?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -414,7 +415,7 @@ function buildComplexityFromRecords(records: Gbb_calculatorpersonacomplexities[]
   return result;
 }
 
-export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
+export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack, onPersonasChanged }) => {
   const styles = useStyles();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -516,6 +517,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
       setSelectedIndex(null);
       setDeleteDialogOpen(false);
       await loadPersonas();
+      onPersonasChanged?.();
     } catch (err) {
       console.error('Failed to delete persona:', err);
     } finally {
@@ -593,6 +595,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
 
       setDialogOpen(false);
       await loadPersonas();
+      onPersonasChanged?.();
     } catch (err) {
       console.error('Failed to save persona:', err);
     } finally {
@@ -857,6 +860,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
       }
 
       await loadPersonas();
+      onPersonasChanged?.();
       if (failCount > 0) {
         alert(`Import complete: ${successCount} succeeded, ${failCount} failed. Check console for details.`);
       }

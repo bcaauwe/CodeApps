@@ -135,42 +135,45 @@ const AppContent: React.FC = () => {
     });
   }, []);
 
-  useEffect(() => {
-    Gbb_calculatorproductsService.getAll({ filter: 'statecode eq 0', orderBy: ['gbb_sortorder asc'] }).then(async (result) => {
-      const data = result.data ?? [];
-      const items: ProductItem[] = data.map((p) => ({
-        id: p.gbb_calculatorproductid,
-        name: p.gbb_name,
-        sortOrder: p.gbb_sortorder,
-        complexityTooltip: p.gbb_complexitytooltip,
-      }));
-      setProducts(items);
-      if (items.length > 0 && !activeToolId) {
-        setActiveToolId(items[0].id);
-      }
-      // Download images for products that have one
-      for (const p of data) {
-        if (p.gbb_productimageid) {
-          try {
-            const imgResult = await Gbb_calculatorproductsService.downloadImage(p.gbb_calculatorproductid, 'gbb_productimage');
-            if (imgResult.data) {
-              const uint8 = new Uint8Array(imgResult.data);
-              let binary = '';
-              for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-              const url = `data:image/png;base64,${btoa(binary)}`;
-              setProducts((prev) =>
-                prev.map((item) =>
-                  item.id === p.gbb_calculatorproductid ? { ...item, imageUrl: url } : item,
-                ),
-              );
-            }
-          } catch {
-            // Image not available
+  const loadProducts = useCallback(async () => {
+    const result = await Gbb_calculatorproductsService.getAll({ filter: 'statecode eq 0', orderBy: ['gbb_sortorder asc'] });
+    const data = result.data ?? [];
+    const items: ProductItem[] = data.map((p) => ({
+      id: p.gbb_calculatorproductid,
+      name: p.gbb_name,
+      sortOrder: p.gbb_sortorder,
+      complexityTooltip: p.gbb_complexitytooltip,
+    }));
+    setProducts(items);
+    if (items.length > 0 && !activeToolId) {
+      setActiveToolId(items[0].id);
+    }
+    // Download images for products that have one
+    for (const p of data) {
+      if (p.gbb_productimageid) {
+        try {
+          const imgResult = await Gbb_calculatorproductsService.downloadImage(p.gbb_calculatorproductid, 'gbb_productimage');
+          if (imgResult.data) {
+            const uint8 = new Uint8Array(imgResult.data);
+            let binary = '';
+            for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+            const url = `data:image/png;base64,${btoa(binary)}`;
+            setProducts((prev) =>
+              prev.map((item) =>
+                item.id === p.gbb_calculatorproductid ? { ...item, imageUrl: url } : item,
+              ),
+            );
           }
+        } catch {
+          // Image not available
         }
       }
-    });
+    }
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   // Load personas from Dataverse when active product changes
   const loadPersonas = useCallback(async () => {
@@ -209,8 +212,10 @@ const AppContent: React.FC = () => {
   }, [activeToolId]);
 
   useEffect(() => {
-    loadPersonas();
-  }, [loadPersonas]);
+    if (page === 'main') {
+      loadPersonas();
+    }
+  }, [loadPersonas, page]);
 
   const activeProduct = products.find((p) => p.id === activeToolId);
   const activeProductName = activeProduct?.name ?? '';
@@ -359,6 +364,7 @@ const AppContent: React.FC = () => {
         ) : page === 'admin-personas' ? (
           <AdminPersonas
             onBack={() => { setPage('settings'); loadPersonas(); }}
+            onPersonasChanged={loadPersonas}
           />
         ) : page === 'admin-pricing' ? (
           <AdminPricing
@@ -367,6 +373,7 @@ const AppContent: React.FC = () => {
         ) : page === 'admin-products' ? (
           <AdminProducts
             onBack={() => setPage('settings')}
+            onProductsChanged={loadProducts}
           />
         ) : page === 'calculator-settings' ? (
           <CalculatorSettings
@@ -384,29 +391,55 @@ const AppContent: React.FC = () => {
               }
             }}
           />
+        ) : products.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
+            <Apps24Regular style={{ fontSize: '48px', color: tokens.colorNeutralForeground3 }} />
+            <Text size={400} weight="semibold">No products configured</Text>
+            <Text size={300} style={{ color: tokens.colorNeutralForeground2 }}>
+              To get started, add products in the Products settings screen.
+            </Text>
+            <Button appearance="primary" icon={<Apps24Regular />} onClick={() => setPage('admin-products')}>
+              Go to Products
+            </Button>
+          </div>
         ) : (
           <>
             <ToolSelector activeToolId={activeToolId} products={products} onToolChange={setActiveToolId} />
-            <PersonaSelector
-              personas={personas}
-              onAddPersona={handleAddPersona}
-            />
-            <EstimateTable
-              rows={activeRows}
-              personas={personas}
-              workingDaysPerMonth={workingDaysPerMonth}
-              toolName={activeProductName}
-              productId={activeToolId}
-              complexityTooltip={activeProduct?.complexityTooltip}
-              currentEstimateId={activeEstimate?.id ?? null}
-              currentEstimateName={activeEstimate?.name ?? ''}
-              onUpdateRow={handleUpdateRow}
-              onRemoveRow={handleRemoveRow}
-              onEstimateSaved={handleEstimateSaved}
-              onEstimateLoaded={handleEstimateLoaded}
-              onEstimateDeleted={handleEstimateDeleted}
-              onEstimateClosed={handleEstimateClosed}
-            />
+            {personas.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
+                <People24Regular style={{ fontSize: '48px', color: tokens.colorNeutralForeground3 }} />
+                <Text size={400} weight="semibold">No personas configured</Text>
+                <Text size={300} style={{ color: tokens.colorNeutralForeground2 }}>
+                  To get started, add personas for this product in the Personas settings screen.
+                </Text>
+                <Button appearance="primary" icon={<People24Regular />} onClick={() => setPage('admin-personas')}>
+                  Go to Personas
+                </Button>
+              </div>
+            ) : (
+              <>
+                <PersonaSelector
+                  personas={personas}
+                  onAddPersona={handleAddPersona}
+                />
+                <EstimateTable
+                  rows={activeRows}
+                  personas={personas}
+                  workingDaysPerMonth={workingDaysPerMonth}
+                  toolName={activeProductName}
+                  productId={activeToolId}
+                  complexityTooltip={activeProduct?.complexityTooltip}
+                  currentEstimateId={activeEstimate?.id ?? null}
+                  currentEstimateName={activeEstimate?.name ?? ''}
+                  onUpdateRow={handleUpdateRow}
+                  onRemoveRow={handleRemoveRow}
+                  onEstimateSaved={handleEstimateSaved}
+                  onEstimateLoaded={handleEstimateLoaded}
+                  onEstimateDeleted={handleEstimateDeleted}
+                  onEstimateClosed={handleEstimateClosed}
+                />
+              </>
+            )}
           </>
         )}
       </div>
