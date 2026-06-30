@@ -135,6 +135,7 @@ export const LoadEstimateDialog: React.FC<LoadEstimateDialogProps> = ({
           complexityLevel: 'medium' as ComplexityKey,
           userCount: line.gbb_users,
           sessionsPerDay: line.gbb_sessions,
+          months: line.gbb_months ?? 12,
           _complexityId: line._gbb_complexity_value,
         } as EstimateRow & { _complexityId?: string };
       });

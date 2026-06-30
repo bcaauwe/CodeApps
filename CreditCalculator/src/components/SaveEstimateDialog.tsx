@@ -114,6 +114,7 @@ export const SaveEstimateDialog: React.FC<SaveEstimateDialogProps> = ({
           "gbb_ProductEstimate@odata.bind": `/gbb_calculatorproductestimates(${estimateId})`,
           gbb_sessions: row.sessionsPerDay,
           gbb_users: row.userCount,
+          gbb_months: row.months,
           statecode: 0,
         } as any);
       }

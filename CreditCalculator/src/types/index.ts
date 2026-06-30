@@ -26,6 +26,7 @@ export interface EstimateRow {
   complexityLevel: ComplexityKey;
   userCount: number;
   sessionsPerDay: number;
+  months: number;
 }
 
 export type ComplexityKey = keyof PersonaComplexity;

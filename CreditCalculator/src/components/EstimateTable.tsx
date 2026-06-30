@@ -195,6 +195,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({ rows, currentEstimateId, curren
           "gbb_ProductEstimate@odata.bind": `/gbb_calculatorproductestimates(${currentEstimateId})`,
           gbb_sessions: row.sessionsPerDay,
           gbb_users: row.userCount,
+          gbb_months: row.months,
           statecode: 0,
         } as any);
       }
@@ -273,7 +274,7 @@ interface EstimateTableProps {
   productId: string;
   currentEstimateId: string | null;
   currentEstimateName: string;
-  onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'complexityLevel' | 'userCount' | 'sessionsPerDay'>, value: string | number) => void;
+  onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => void;
   onRemoveRow: (rowId: string) => void;
   onEstimateSaved: (estimateId: string, estimateName: string) => void;
   onEstimateLoaded: (estimateId: string, estimateName: string, rows: EstimateRow[]) => void;
@@ -331,10 +332,12 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
 
   const grandTotalLow = rows.reduce((sum, row) => sum + calcCreditsRange(row).low, 0);
   const grandTotalHigh = rows.reduce((sum, row) => sum + calcCreditsRange(row).high, 0);
+  const grandTotalYearlyLow = rows.reduce((sum, row) => sum + calcCreditsRange(row).low * row.months, 0);
+  const grandTotalYearlyHigh = rows.reduce((sum, row) => sum + calcCreditsRange(row).high * row.months, 0);
   const totalUsers = rows.reduce((sum, row) => sum + row.userCount, 0);
 
   const exportCsv = () => {
-    const headers = ['Persona', 'Complexity', 'Users', 'Sessions/Day', 'Cr/Session (Min)', 'Cr/Session (Max)', 'Days/Month', 'Credits/Mo (Min)', 'Credits/Mo (Max)'];
+    const headers = ['Persona', 'Complexity', 'Users', 'Sessions/Day', 'Months', 'Cr/Session (Min)', 'Cr/Session (Max)', 'Days/Month', 'Credits/Mo (Min)', 'Credits/Mo (Max)'];
     const csvRows = rows.map((row) => {
       const persona = getPersona(row.personaId);
       const level = persona?.complexity[row.complexityLevel];
@@ -344,6 +347,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
         complexityLabels[row.complexityLevel],
         row.userCount,
         row.sessionsPerDay,
+        row.months,
         level?.creditsPerSessionMin ?? 0,
         level?.creditsPerSessionMax ?? 0,
         workingDaysPerMonth,
@@ -351,7 +355,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
         range.high,
       ].join(',');
     });
-    csvRows.push(['Total', '', totalUsers, '', '', '', '', grandTotalLow, grandTotalHigh].join(','));
+    csvRows.push(['Total', '', totalUsers, '', '', '', '', '', grandTotalLow, grandTotalHigh].join(','));
 
     // Procurement options
     if (grandTotalHigh > 0 && pricingRecords.length > 0) {
@@ -494,6 +498,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
               <th className={styles.thCenter}>Complexity</th>
               <th className={styles.thCenter}>Users</th>
               <th className={styles.thCenter}>Sessions/Day</th>
+              <th className={styles.thCenter}>Months</th>
               <th className={styles.thRight}>Credits/Mo</th>
               <th className={styles.thCenter}></th>
             </tr>
@@ -555,6 +560,20 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
                       size="small"
                     />
                   </td>
+                  <td className={styles.tdCenter}>
+                    <Input
+                      className={styles.narrowInput}
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={String(row.months)}
+                      onChange={(_, data) => {
+                        const v = parseInt(data.value, 10);
+                        onUpdateRow(row.id, 'months', isNaN(v) ? 12 : Math.max(1, Math.min(12, v)));
+                      }}
+                      size="small"
+                    />
+                  </td>
                   <td className={styles.tdRight}>
                     <Text className={styles.creditsCell}>{formatCredits(range.low)} – {formatCredits(range.high)}</Text>
                   </td>
@@ -586,7 +605,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
               <Text size={300} style={{ color: tokens.colorNeutralForeground3 }}>per month</Text>
             </Text>
             <Text weight="semibold" size={400} block style={{ marginTop: tokens.spacingVerticalXS }}>
-              {formatCredits(grandTotalLow * 12)} – {formatCredits(grandTotalHigh * 12)}{' '}
+              {formatCredits(grandTotalYearlyLow)} – {formatCredits(grandTotalYearlyHigh)}{' '}
               <Text size={300} style={{ color: tokens.colorNeutralForeground3 }}>per year</Text>
             </Text>
           </div>
