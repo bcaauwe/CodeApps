@@ -894,7 +894,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
                       <td className={styles.tdCenter}>{c.rec.gbb_tier ?? ''}</td>
                       <td className={styles.tdCenter}>{c.rec.gbb_credits.toLocaleString()}</td>
                       <td className={styles.tdCenter}>
-                        ${c.rec.gbb_costperunit.toLocaleString()}
+                        ${c.rec.gbb_costperunit.toLocaleString('en-US', { minimumFractionDigits: c.rec.gbb_costperunit % 1 === 0 ? 0 : 4, maximumFractionDigits: c.rec.gbb_costperunit % 1 === 0 ? 0 : 4 })}
                       </td>
                       <td className={styles.tdCenter}>{c.qty}</td>
                       <td className={styles.tdCenter}>{(c.qty * c.rec.gbb_credits).toLocaleString()}</td>
