@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Text,
   Badge,
@@ -18,6 +18,7 @@ import { Gbb_calculatorpricingsService } from '../generated/services/Gbb_calcula
 import type { Gbb_calculatorpricings } from '../generated/models/Gbb_calculatorpricingsModel';
 import { Gbb_calculatorpricingsgbb_billing as BillingLabels } from '../generated/models/Gbb_calculatorpricingsModel';
 import { SaveEstimateDialog } from './SaveEstimateDialog';
+import { ComplexityTooltip } from './ComplexityTooltip';
 import { LoadEstimateDialog } from './LoadEstimateDialog';
 import { Gbb_calculatorproductestimatesService } from '../generated/services/Gbb_calculatorproductestimatesService';
 import { Gbb_calculatorestimatelinesService } from '../generated/services/Gbb_calculatorestimatelinesService';
@@ -336,6 +337,71 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
   const grandTotalYearlyHigh = rows.reduce((sum, row) => sum + calcCreditsRange(row).high * row.months, 0);
   const totalUsers = rows.reduce((sum, row) => sum + row.userCount, 0);
 
+  // Compute procurement options reactively whenever rows/pricing/personas change
+  const procurementOptions = useMemo(() => {
+    if (grandTotalHigh <= 0 || pricingRecords.length === 0) return [];
+
+    const groupedRecords = new Map<string, Gbb_calculatorpricings[]>();
+    for (const rec of pricingRecords) {
+      const group = rec.gbb_pricinggroup;
+      const existing = groupedRecords.get(group) ?? [];
+      existing.push(rec);
+      groupedRecords.set(group, existing);
+    }
+
+    type ProcurementOption = { rec: Gbb_calculatorpricings; qty: number }[];
+    const results: { group: string; options: ProcurementOption }[] = [];
+
+    for (const [group, tiers] of groupedRecords) {
+      let bestOption: ProcurementOption = [];
+      let bestCost = Infinity;
+
+      // Monthly tiers: multiple units allowed, compare against monthly credits needed
+      const monthlyTiers = tiers.filter((rec) => rec.gbb_billing === 803430000);
+      for (const rec of monthlyTiers) {
+        const monthlyCredits = rec.gbb_credits;
+        const qty = monthlyCredits > 0 ? Math.ceil(grandTotalHigh / monthlyCredits) : 1;
+        const cost = qty * rec.gbb_costperunit;
+        if (cost < bestCost) {
+          bestOption = [{ rec, qty }];
+          bestCost = cost;
+        }
+      }
+
+      // Yearly tiers: only 1 unit each, compare against yearly credits needed
+      const yearlyTiers = tiers
+        .filter((rec) => rec.gbb_billing === 803430001)
+        .sort((a, b) => b.gbb_credits - a.gbb_credits);
+
+      if (yearlyTiers.length > 0) {
+        const maxSubsetSize = Math.min(yearlyTiers.length, 10);
+        for (let mask = 1; mask < (1 << maxSubsetSize); mask++) {
+          let totalYearlyCredits = 0;
+          let totalCost = 0;
+          const combo: ProcurementOption = [];
+          for (let bit = 0; bit < maxSubsetSize; bit++) {
+            if (mask & (1 << bit)) {
+              const tier = yearlyTiers[bit];
+              totalYearlyCredits += tier.gbb_credits;
+              totalCost += tier.gbb_costperunit;
+              combo.push({ rec: tier, qty: 1 });
+            }
+          }
+          if (totalYearlyCredits >= grandTotalYearlyHigh && totalCost < bestCost) {
+            bestOption = combo;
+            bestCost = totalCost;
+          }
+        }
+      }
+
+      if (bestOption.length > 0) {
+        results.push({ group, options: bestOption });
+      }
+    }
+
+    return results;
+  }, [rows, personas, workingDaysPerMonth, pricingRecords, grandTotalHigh, grandTotalYearlyHigh]);
+
   const exportCsv = () => {
     const headers = ['Persona', 'Complexity', 'Users', 'Sessions/Day', 'Months', 'Cr/Session (Min)', 'Cr/Session (Max)', 'Days/Month', 'Credits/Mo (Min)', 'Credits/Mo (Max)'];
     const csvRows = rows.map((row) => {
@@ -361,46 +427,72 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
     if (grandTotalHigh > 0 && pricingRecords.length > 0) {
       csvRows.push('');
       csvRows.push('Procurement Options');
-      csvRows.push(['Purchase Model', 'Tier', 'Credits Provided', 'Cost/Unit', 'Units', 'Cost', 'Billing'].join(','));
+      csvRows.push(['Purchase Model', 'Tier', 'Credits Provided', 'Cost/Unit', 'Units', 'Total Credits', 'Cost', 'Billing'].join(','));
 
-      const groupMap = new Map<string, Gbb_calculatorpricings>();
+      const groupedRecords = new Map<string, Gbb_calculatorpricings[]>();
       for (const rec of pricingRecords) {
         const group = rec.gbb_pricinggroup;
-        const existing = groupMap.get(group);
-        const isYearly = rec.gbb_billing === 803430001;
-        const monthlyCredits = isYearly ? rec.gbb_credits / 12 : rec.gbb_credits;
-
-        if (!existing) {
-          groupMap.set(group, rec);
-        } else {
-          const existingIsYearly = existing.gbb_billing === 803430001;
-          const existingMonthly = existingIsYearly ? existing.gbb_credits / 12 : existing.gbb_credits;
-
-          if (existingMonthly < grandTotalHigh && monthlyCredits >= grandTotalHigh) {
-            groupMap.set(group, rec);
-          } else if (monthlyCredits >= grandTotalHigh && existingMonthly >= grandTotalHigh && monthlyCredits < existingMonthly) {
-            groupMap.set(group, rec);
-          } else if (monthlyCredits < grandTotalHigh && existingMonthly < grandTotalHigh && monthlyCredits > existingMonthly) {
-            groupMap.set(group, rec);
-          }
-        }
+        const existing = groupedRecords.get(group) ?? [];
+        existing.push(rec);
+        groupedRecords.set(group, existing);
       }
 
-      for (const rec of groupMap.values()) {
-        const isYearly = rec.gbb_billing === 803430001;
-        const monthlyCredits = isYearly ? rec.gbb_credits / 12 : rec.gbb_credits;
-        const qty = monthlyCredits > 0 ? Math.ceil(grandTotalHigh / monthlyCredits) : 1;
-        const cost = qty * rec.gbb_costperunit;
-        const billingLabel = BillingLabels[rec.gbb_billing] ?? '';
-        csvRows.push([
-          `"${rec.gbb_name}"`,
-          `"${rec.gbb_tier ?? ''}"`,
-          rec.gbb_credits,
-          rec.gbb_costperunit,
-          qty,
-          cost.toFixed(2),
-          `"${billingLabel}"`,
-        ].join(','));
+      for (const [, tiers] of groupedRecords) {
+        let bestOption: { rec: Gbb_calculatorpricings; qty: number }[] = [];
+        let bestCost = Infinity;
+
+        // Monthly tiers: multiple units allowed
+        const monthlyTiers = tiers.filter((rec) => rec.gbb_billing === 803430000);
+        for (const rec of monthlyTiers) {
+          const monthlyCredits = rec.gbb_credits;
+          const qty = monthlyCredits > 0 ? Math.ceil(grandTotalHigh / monthlyCredits) : 1;
+          const cost = qty * rec.gbb_costperunit;
+          if (cost < bestCost) {
+            bestOption = [{ rec, qty }];
+            bestCost = cost;
+          }
+        }
+
+        // Yearly tiers: only 1 unit each, compare against yearly credits needed
+        const yearlyTiers = tiers
+          .filter((rec) => rec.gbb_billing === 803430001)
+          .sort((a, b) => b.gbb_credits - a.gbb_credits);
+
+        if (yearlyTiers.length > 0) {
+          const maxSubsetSize = Math.min(yearlyTiers.length, 10);
+          for (let mask = 1; mask < (1 << maxSubsetSize); mask++) {
+            let totalYearlyCredits = 0;
+            let totalCost = 0;
+            const combo: { rec: Gbb_calculatorpricings; qty: number }[] = [];
+            for (let bit = 0; bit < maxSubsetSize; bit++) {
+              if (mask & (1 << bit)) {
+                const tier = yearlyTiers[bit];
+                totalYearlyCredits += tier.gbb_credits;
+                totalCost += tier.gbb_costperunit;
+                combo.push({ rec: tier, qty: 1 });
+              }
+            }
+            if (totalYearlyCredits >= grandTotalYearlyHigh && totalCost < bestCost) {
+              bestOption = combo;
+              bestCost = totalCost;
+            }
+          }
+        }
+
+        for (const c of bestOption) {
+          const cost = c.qty * c.rec.gbb_costperunit;
+          const billingLabel = BillingLabels[c.rec.gbb_billing] ?? '';
+          csvRows.push([
+            `"${c.rec.gbb_name}"`,
+            `"${c.rec.gbb_tier ?? ''}"`,
+            c.rec.gbb_credits,
+            c.rec.gbb_costperunit,
+            c.qty,
+            c.qty * c.rec.gbb_credits,
+            cost.toFixed(2),
+            `"${billingLabel}"`,
+          ].join(','));
+        }
       }
     }
 
@@ -495,7 +587,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           <thead>
             <tr>
               <th className={styles.th}>Persona</th>
-              <th className={styles.thCenter}>Complexity</th>
+              <th className={styles.thCenter}>Complexity <ComplexityTooltip /></th>
               <th className={styles.thCenter}>Users</th>
               <th className={styles.thCenter}>Sessions/Day</th>
               <th className={styles.thCenter}>Months</th>
@@ -635,71 +727,36 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
                 <th className={styles.thCenter}>Credits Provided</th>
                 <th className={styles.thCenter}>Cost/Unit</th>
                 <th className={styles.thCenter}>Units</th>
+                <th className={styles.thCenter}>Total Credits</th>
                 <th className={styles.thRight}>Cost</th>
                 <th className={styles.thCenter}>Billing</th>
               </tr>
             </thead>
             <tbody>
-              {(() => {
-                // Group records by pricing group – pick best option per group
-                const groupMap = new Map<string, Gbb_calculatorpricings>();
-                for (const rec of pricingRecords) {
-                  const group = rec.gbb_pricinggroup;
-                  const existing = groupMap.get(group);
-
-                  const isYearly = rec.gbb_billing === 803430001;
-                  const monthlyCredits = isYearly ? rec.gbb_credits / 12 : rec.gbb_credits;
-
-                  if (!existing) {
-                    groupMap.set(group, rec);
-                  } else {
-                    // Pick the smallest option that still covers the monthly estimate
-                    const existingIsYearly = existing.gbb_billing === 803430001;
-                    const existingMonthly = existingIsYearly ? existing.gbb_credits / 12 : existing.gbb_credits;
-
-                    if (existingMonthly < grandTotalHigh && monthlyCredits >= grandTotalHigh) {
-                      groupMap.set(group, rec);
-                    } else if (monthlyCredits >= grandTotalHigh && existingMonthly >= grandTotalHigh && monthlyCredits < existingMonthly) {
-                      groupMap.set(group, rec);
-                    } else if (monthlyCredits < grandTotalHigh && existingMonthly < grandTotalHigh && monthlyCredits > existingMonthly) {
-                      groupMap.set(group, rec);
-                    }
-                  }
-                }
-
-                const combination = Array.from(groupMap.values()).map((rec) => {
-                  const isYearly = rec.gbb_billing === 803430001;
-                  const monthlyCredits = isYearly ? rec.gbb_credits / 12 : rec.gbb_credits;
-                  const qty = monthlyCredits > 0 ? Math.ceil(grandTotalHigh / monthlyCredits) : 1;
-                  return { rec, qty };
-                });
-
-                return (
-                  <>
-                    {combination.map((c, idx) => {
-                      const cost = c.qty * c.rec.gbb_costperunit;
-                      const billingLabel = BillingLabels[c.rec.gbb_billing] ?? '';
-                      return (
-                        <tr key={idx}>
-                          <td className={styles.td}>
-                            <Text>{c.rec.gbb_name}</Text>
-                          </td>
-                          <td className={styles.tdCenter}>{c.rec.gbb_tier ?? ''}</td>
-                          <td className={styles.tdCenter}>{c.rec.gbb_credits.toLocaleString()}</td>
-                          <td className={styles.tdCenter}>
-                            ${c.rec.gbb_costperunit.toLocaleString()}
-                          </td>
-                          <td className={styles.tdCenter}>{c.qty}</td>
-                          <td className={styles.tdRight}>
-                            ${cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </td>
-                          <td className={styles.tdCenter}>{billingLabel}</td>
-                        </tr>
-                      );
-                    })}
-                  </>
-                );
-              })()}
+              {procurementOptions.flatMap((r, gIdx) =>
+                r.options.map((c, idx) => {
+                  const cost = c.qty * c.rec.gbb_costperunit;
+                  const billingLabel = BillingLabels[c.rec.gbb_billing] ?? '';
+                  return (
+                    <tr key={`${gIdx}-${idx}`}>
+                      <td className={styles.td}>
+                        <Text>{c.rec.gbb_name}</Text>
+                      </td>
+                      <td className={styles.tdCenter}>{c.rec.gbb_tier ?? ''}</td>
+                      <td className={styles.tdCenter}>{c.rec.gbb_credits.toLocaleString()}</td>
+                      <td className={styles.tdCenter}>
+                        ${c.rec.gbb_costperunit.toLocaleString()}
+                      </td>
+                      <td className={styles.tdCenter}>{c.qty}</td>
+                      <td className={styles.tdCenter}>{(c.qty * c.rec.gbb_credits).toLocaleString()}</td>
+                      <td className={styles.tdRight}>
+                        ${cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className={styles.tdCenter}>{billingLabel}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
           )}

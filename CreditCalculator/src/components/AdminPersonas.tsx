@@ -42,6 +42,7 @@ import { Gbb_calculatorpersonacomplexitiesService } from '../generated/services/
 import type { Gbb_calculatorpersonas } from '../generated/models/Gbb_calculatorpersonasModel';
 import type { Gbb_calculatorpersonacomplexities } from '../generated/models/Gbb_calculatorpersonacomplexitiesModel';
 import type { PersonaComplexity } from '../types';
+import { ComplexityTooltip } from './ComplexityTooltip';
 
 interface AdminPersonasProps {
   onBack: () => void;
@@ -160,6 +161,11 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
   },
+  requiredIndicator: {
+    color: tokens.colorPaletteRedForeground1,
+    fontWeight: tokens.fontWeightBold,
+    marginLeft: '2px',
+  },
   intensityGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr 1fr',
@@ -184,6 +190,12 @@ const useStyles = makeStyles({
   intensityInput: {
     width: '90px',
   },
+  intensityError: {
+    color: tokens.colorPaletteRedForeground1,
+    fontSize: tokens.fontSizeBase100,
+    textAlign: 'center' as const,
+    marginTop: tokens.spacingVerticalXXS,
+  },
   iconPickerTrigger: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -194,6 +206,7 @@ const useStyles = makeStyles({
     cursor: 'pointer',
     minWidth: '140px',
     backgroundColor: 'transparent',
+    color: tokens.colorNeutralForeground1,
   },
   iconPickerOverlay: {
     position: 'fixed' as const,
@@ -242,6 +255,7 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     cursor: 'pointer',
     gap: tokens.spacingVerticalXXS,
+    color: tokens.colorNeutralForeground1,
     '&:hover': {
       backgroundColor: tokens.colorNeutralBackground1Hover,
     },
@@ -255,6 +269,7 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     cursor: 'pointer',
     gap: tokens.spacingVerticalXXS,
+    color: tokens.colorNeutralForeground1,
     backgroundColor: tokens.colorBrandBackground2,
   },
   iconName: {
@@ -401,7 +416,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dialogPersona, setDialogPersona] = useState<DialogPersona>({ ...emptyDialogPersona });
   const [editingRecord, setEditingRecord] = useState<Gbb_calculatorpersonas | null>(null);
-  const [sortColumn, setSortColumn] = useState<'name' | 'product' | 'description' | null>(null);
+  const [sortColumn, setSortColumn] = useState<'name' | 'product' | 'description' | null>('product');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filters, setFilters] = useState<{ name: string; product: string; description: string }>({ name: '', product: '', description: '' });
   const [showFilters, setShowFilters] = useState(false);
@@ -946,14 +961,15 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
             <DialogTitle>{editingRecord ? 'Edit Persona' : 'New Persona'}</DialogTitle>
             <DialogContent>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Name</Text>
+                <Text className={styles.fieldLabel}>Name<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   value={dialogPersona.name}
                   onChange={(_, data) => setDialogPersona((p) => ({ ...p, name: data.value }))}
+                  required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Product</Text>
+                <Text className={styles.fieldLabel}>Product<span className={styles.requiredIndicator}> *</span></Text>
                 <Dropdown
                   value={getProductName(dialogPersona.productId)}
                   selectedOptions={dialogPersona.productId ? [dialogPersona.productId] : []}
@@ -984,11 +1000,16 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
 
               <Divider style={{ margin: `${tokens.spacingVerticalM} 0` }} />
 
-              <Text className={styles.fieldLabel} style={{ marginBottom: tokens.spacingVerticalS }}>
+              <Text className={styles.fieldLabel} style={{ marginBottom: tokens.spacingVerticalS, display: 'inline-flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
                 Credits per Session (Min – Max)
+                <ComplexityTooltip />
               </Text>
               <div className={styles.intensityGrid}>
-                {(['low', 'medium', 'high', 'veryHigh'] as const).map((level) => (
+                {(['low', 'medium', 'high', 'veryHigh'] as const).map((level) => {
+                  const min = dialogPersona.complexity[level].creditsPerSessionMin;
+                  const max = dialogPersona.complexity[level].creditsPerSessionMax;
+                  const hasError = max <= min;
+                  return (
                   <div key={level} className={styles.intensityColumn}>
                     <Text className={styles.intensityLabel}>
                       {level === 'veryHigh' ? 'Very High' : level.charAt(0).toUpperCase() + level.slice(1)}
@@ -1012,15 +1033,19 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
                         }
                       />
                     </div>
+                    {hasError && (
+                      <Text className={styles.intensityError}>Max must be greater than Min</Text>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </DialogContent>
             <DialogActions>
               <DialogTrigger disableButtonEnhancement>
                 <Button appearance="secondary">Cancel</Button>
               </DialogTrigger>
-              <Button appearance="primary" onClick={handleDialogSave} disabled={saving}>
+              <Button appearance="primary" onClick={handleDialogSave} disabled={saving || !dialogPersona.name.trim() || !dialogPersona.productId || (['low', 'medium', 'high', 'veryHigh'] as const).some((l) => dialogPersona.complexity[l].creditsPerSessionMax <= dialogPersona.complexity[l].creditsPerSessionMin)}>
                 {saving ? <Spinner size="tiny" /> : editingRecord ? 'Save' : 'Create'}
               </Button>
             </DialogActions>

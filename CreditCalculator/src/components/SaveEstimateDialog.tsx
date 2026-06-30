@@ -191,7 +191,7 @@ export const SaveEstimateDialog: React.FC<SaveEstimateDialogProps> = ({
             <Button
               appearance="primary"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !estimateName.trim()}
               icon={saving ? <Spinner size="tiny" /> : undefined}
             >
               {saving ? 'Saving...' : 'Save'}

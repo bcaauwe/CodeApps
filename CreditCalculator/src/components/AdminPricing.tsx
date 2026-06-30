@@ -140,6 +140,11 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
   },
+  requiredIndicator: {
+    color: tokens.colorPaletteRedForeground1,
+    fontWeight: tokens.fontWeightBold,
+    marginLeft: '2px',
+  },
   datasheetRow: {
     display: 'grid',
     gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr 1fr',
@@ -633,21 +638,23 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
             <DialogTitle>{editingRecord ? 'Edit Pricing Model' : 'New Pricing Model'}</DialogTitle>
             <DialogContent>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Pricing Group</Text>
+                <Text className={styles.fieldLabel}>Pricing Group<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   value={dialogForm.gbb_pricinggroup}
                   onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_pricinggroup: data.value }))}
+                  required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Name</Text>
+                <Text className={styles.fieldLabel}>Name<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   value={dialogForm.gbb_name}
                   onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_name: data.value }))}
+                  required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Billing</Text>
+                <Text className={styles.fieldLabel}>Billing<span className={styles.requiredIndicator}> *</span></Text>
                 <Dropdown
                   value={BillingLabels[dialogForm.gbb_billing] ?? ''}
                   selectedOptions={[String(dialogForm.gbb_billing)]}
@@ -666,22 +673,24 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Credits Included</Text>
+                <Text className={styles.fieldLabel}>Credits Included<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   type="number"
                   min={1}
                   value={String(dialogForm.gbb_credits)}
                   onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_credits: Number(data.value) || 1 }))}
+                  required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Cost per Unit ($)</Text>
+                <Text className={styles.fieldLabel}>Cost per Unit ($)<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   type="number"
                   min={0}
                   step="0.01"
                   value={String(dialogForm.gbb_costperunit)}
                   onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_costperunit: Number(data.value) || 0 }))}
+                  required
                 />
               </div>
             </DialogContent>
@@ -689,7 +698,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
               <DialogTrigger disableButtonEnhancement>
                 <Button appearance="secondary">Cancel</Button>
               </DialogTrigger>
-              <Button appearance="primary" onClick={handleDialogSave} disabled={saving}>
+              <Button appearance="primary" onClick={handleDialogSave} disabled={saving || !dialogForm.gbb_pricinggroup.trim() || !dialogForm.gbb_name.trim()}>
                 {saving ? 'Saving...' : editingRecord ? 'Save' : 'Create'}
               </Button>
             </DialogActions>

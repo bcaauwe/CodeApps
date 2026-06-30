@@ -134,6 +134,11 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
   },
+  requiredIndicator: {
+    color: tokens.colorPaletteRedForeground1,
+    fontWeight: tokens.fontWeightBold,
+    marginLeft: '2px',
+  },
   datasheetRow: {
     display: 'grid',
     gridTemplateColumns: '48px 2fr 1fr',
@@ -699,10 +704,11 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
             <DialogTitle>{editingRecord ? 'Edit Product' : 'New Product'}</DialogTitle>
             <DialogContent>
               <div className={styles.fieldGroup}>
-                <Text className={styles.fieldLabel}>Name</Text>
+                <Text className={styles.fieldLabel}>Name<span className={styles.requiredIndicator}> *</span></Text>
                 <Input
                   value={dialogForm.gbb_name}
                   onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_name: data.value }))}
+                  required
                 />
               </div>
               <div className={styles.fieldGroup}>
@@ -753,13 +759,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
                     Change Image
                   </Button>
                 )}
+                <Text size={200} style={{ color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS }}>
+                  Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF
+                </Text>
               </div>
             </DialogContent>
             <DialogActions>
               <DialogTrigger disableButtonEnhancement>
                 <Button appearance="secondary">Cancel</Button>
               </DialogTrigger>
-              <Button appearance="primary" onClick={handleDialogSave} disabled={saving}>
+              <Button appearance="primary" onClick={handleDialogSave} disabled={saving || !dialogForm.gbb_name.trim()}>
                 {saving ? 'Saving...' : editingRecord ? 'Save' : 'Create'}
               </Button>
             </DialogActions>

@@ -179,48 +179,44 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Load personas from Dataverse when active product changes
-  useEffect(() => {
+  const loadPersonas = useCallback(async () => {
     if (!activeToolId) {
       setPersonas([]);
       return;
     }
-    let cancelled = false;
 
-    async function loadPersonas() {
-      try {
-        const result = await Gbb_calculatorpersonasService.getAll({
-          filter: `_gbb_product_value eq '${activeToolId}' and statecode eq 0`,
-        });
-        const personaRecords = result.data ?? [];
+    try {
+      const result = await Gbb_calculatorpersonasService.getAll({
+        filter: `_gbb_product_value eq '${activeToolId}' and statecode eq 0`,
+      });
+      const personaRecords = result.data ?? [];
 
-        // Load complexities for all personas
-        const mapped: Persona[] = await Promise.all(
-          personaRecords.map(async (rec) => {
-            const cResult = await Gbb_calculatorpersonacomplexitiesService.getAll({
-              filter: `_gbb_persona_value eq '${rec.gbb_calculatorpersonaid}' and statecode eq 0`,
-            });
-            const complexity = buildComplexityFromRecords(cResult.data ?? []);
-            return {
-              id: rec.gbb_calculatorpersonaid,
-              name: rec.gbb_name,
-              icon: rec.gbb_icon ?? 'Person',
-              bullets: rec.gbb_description ? rec.gbb_description.split('\n').filter((b) => b.trim() !== '') : [],
-              complexity,
-            };
-          }),
-        );
+      // Load complexities for all personas
+      const mapped: Persona[] = await Promise.all(
+        personaRecords.map(async (rec) => {
+          const cResult = await Gbb_calculatorpersonacomplexitiesService.getAll({
+            filter: `_gbb_persona_value eq '${rec.gbb_calculatorpersonaid}' and statecode eq 0`,
+          });
+          const complexity = buildComplexityFromRecords(cResult.data ?? []);
+          return {
+            id: rec.gbb_calculatorpersonaid,
+            name: rec.gbb_name,
+            icon: rec.gbb_icon ?? 'Person',
+            bullets: rec.gbb_description ? rec.gbb_description.split('\n').filter((b) => b.trim() !== '') : [],
+            complexity,
+          };
+        }),
+      );
 
-        if (!cancelled) {
-          setPersonas(mapped);
-        }
-      } catch (err) {
-        console.error('Failed to load personas:', err);
-      }
+      setPersonas(mapped);
+    } catch (err) {
+      console.error('Failed to load personas:', err);
     }
-
-    loadPersonas();
-    return () => { cancelled = true; };
   }, [activeToolId]);
+
+  useEffect(() => {
+    loadPersonas();
+  }, [loadPersonas]);
 
   const activeProductName = products.find((p) => p.id === activeToolId)?.name ?? '';
   const activeRows = estimateRows[activeToolId] ?? [];
@@ -367,7 +363,7 @@ const AppContent: React.FC = () => {
           />
         ) : page === 'admin-personas' ? (
           <AdminPersonas
-            onBack={() => setPage('settings')}
+            onBack={() => { setPage('settings'); loadPersonas(); }}
           />
         ) : page === 'admin-pricing' ? (
           <AdminPricing
