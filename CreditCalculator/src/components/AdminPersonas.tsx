@@ -536,7 +536,6 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
             });
           } else {
             await Gbb_calculatorpersonacomplexitiesService.create({
-              gbb_name: `${dialogPersona.name} - ${level}`,
               gbb_complexity: choiceValue as any,
               gbb_minimum: dialogPersona.complexity[key].creditsPerSessionMin,
               gbb_maximum: dialogPersona.complexity[key].creditsPerSessionMax,
@@ -561,7 +560,6 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
           for (const [level, choiceValue] of Object.entries(COMPLEXITY_MAP)) {
             const key = level as keyof PersonaComplexity;
             await Gbb_calculatorpersonacomplexitiesService.create({
-              gbb_name: `${dialogPersona.name} - ${level}`,
               gbb_complexity: choiceValue as any,
               gbb_minimum: dialogPersona.complexity[key].creditsPerSessionMin,
               gbb_maximum: dialogPersona.complexity[key].creditsPerSessionMax,
@@ -802,7 +800,6 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
             ];
             for (const cd of complexityData) {
               await Gbb_calculatorpersonacomplexitiesService.create({
-                gbb_name: `${personaName} - ${cd.level}`,
                 gbb_complexity: cd.choiceValue as any,
                 gbb_minimum: cd.min,
                 gbb_maximum: cd.max,
