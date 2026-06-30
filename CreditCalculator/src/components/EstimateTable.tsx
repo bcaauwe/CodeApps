@@ -18,7 +18,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Delete24Regular, ArrowDownload24Regular, Save24Regular, Dismiss24Regular, PersonSwap24Regular } from '@fluentui/react-icons';
+import { Delete24Regular, ArrowDownload24Regular, Save24Regular, Dismiss24Regular, PersonSwap24Regular, Warning16Regular, Money24Regular } from '@fluentui/react-icons';
 import type { Persona, EstimateRow, ComplexityKey } from '../types';
 import { iconMap } from '../data/icons';
 import { Gbb_calculatorpricingsService } from '../generated/services/Gbb_calculatorpricingsService';
@@ -393,6 +393,7 @@ interface EstimateTableProps {
   onEstimateLoaded: (estimateId: string, estimateName: string, rows: EstimateRow[]) => void;
   onEstimateDeleted: () => void;
   onEstimateClosed: () => void;
+  onNavigateToPricing?: () => void;
 }
 
 export const EstimateTable: React.FC<EstimateTableProps> = ({
@@ -410,6 +411,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
   onEstimateLoaded,
   onEstimateDeleted,
   onEstimateClosed,
+  onNavigateToPricing,
 }) => {
   const styles = useStyles();
   const [pricingRecords, setPricingRecords] = useState<Gbb_calculatorpricings[]>([]);
@@ -842,6 +844,22 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           <Text weight="semibold" size={400}>
             Procurement Options
           </Text>
+          {!pricingLoading && pricingRecords.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalM, padding: tokens.spacingVerticalL }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, color: tokens.colorPaletteYellowForeground2 }}>
+                <Warning16Regular />
+                <Text style={{ color: tokens.colorPaletteYellowForeground2, fontWeight: tokens.fontWeightSemibold }}>
+                  Configuration Required — No pricing data has been configured.
+                </Text>
+              </div>
+              {onNavigateToPricing && (
+                <Button appearance="primary" icon={<Money24Regular />} onClick={onNavigateToPricing}>
+                  Go to Pricing
+                </Button>
+              )}
+            </div>
+          ) : (
+          <>
           <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
             Recommended combination to cover {formatCredits(grandTotalLow)} – {formatCredits(grandTotalHigh)} credits/month
           </Text>
@@ -890,6 +908,8 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
               )}
             </tbody>
           </table>
+          )}
+          </>
           )}
         </Card>
       )}

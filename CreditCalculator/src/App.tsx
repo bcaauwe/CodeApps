@@ -440,6 +440,7 @@ const AppContent: React.FC = () => {
                   onEstimateLoaded={handleEstimateLoaded}
                   onEstimateDeleted={handleEstimateDeleted}
                   onEstimateClosed={handleEstimateClosed}
+                  onNavigateToPricing={() => setPage('admin-pricing')}
                 />
               </>
             )}
