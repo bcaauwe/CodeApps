@@ -194,6 +194,8 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
   const [datasheetMode, setDatasheetMode] = useState(false);
   const [datasheetEdits, setDatasheetEdits] = useState<Record<string, Partial<PricingFormData>>>({});
   const [savingRows, setSavingRows] = useState<Set<string>>(new Set());
+  const [costPerUnitInput, setCostPerUnitInput] = useState(String(emptyFormData.gbb_costperunit));
+  const [datasheetCostInputs, setDatasheetCostInputs] = useState<Record<string, string>>({});
 
   const loadRecords = useCallback(async () => {
     setLoading(true);
@@ -389,6 +391,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
 
   const handleNew = () => {
     setDialogForm({ ...emptyFormData });
+    setCostPerUnitInput(String(emptyFormData.gbb_costperunit));
     setEditingRecord(null);
     setDialogOpen(true);
   };
@@ -404,6 +407,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
       gbb_costperunit: rec.gbb_costperunit,
       gbb_billing: rec.gbb_billing,
     });
+    setCostPerUnitInput(String(rec.gbb_costperunit));
     setEditingRecord(rec);
     setDialogOpen(true);
   };
@@ -430,6 +434,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
   };
 
   const handleDialogSave = async () => {
+    const parsedCost = parseFloat(costPerUnitInput) || 0;
     setSaving(true);
     try {
       if (editingRecord) {
@@ -438,7 +443,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
           gbb_name: dialogForm.gbb_name,
           gbb_tier: dialogForm.gbb_tier || undefined,
           gbb_credits: dialogForm.gbb_credits,
-          gbb_costperunit: dialogForm.gbb_costperunit,
+          gbb_costperunit: parsedCost,
           gbb_billing: dialogForm.gbb_billing,
         });
       } else {
@@ -447,7 +452,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
           gbb_name: dialogForm.gbb_name,
           gbb_tier: dialogForm.gbb_tier || undefined,
           gbb_credits: dialogForm.gbb_credits,
-          gbb_costperunit: dialogForm.gbb_costperunit,
+          gbb_costperunit: parsedCost,
           gbb_billing: dialogForm.gbb_billing,
           statecode: 0,
         });
@@ -493,7 +498,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
         <Button
           appearance={datasheetMode ? 'primary' : 'secondary'}
           icon={datasheetMode ? <List24Regular /> : <TableEdit24Regular />}
-          onClick={() => { setDatasheetMode((v) => !v); setDatasheetEdits({}); }}
+          onClick={() => { setDatasheetMode((v) => !v); setDatasheetEdits({}); setDatasheetCostInputs({}); }}
         >
           {datasheetMode ? 'List View' : 'Datasheet'}
         </Button>
@@ -596,9 +601,19 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
                 size="small"
                 type="number"
                 step="0.01"
-                value={String(getDatasheetValue(record, 'gbb_costperunit'))}
-                onChange={(_, d) => handleDatasheetChange(id, 'gbb_costperunit', Number(d.value) || 0)}
-                onBlur={() => handleDatasheetBlur(record)}
+                value={datasheetCostInputs[id] ?? String(getDatasheetValue(record, 'gbb_costperunit'))}
+                onChange={(_, d) => {
+                  setDatasheetCostInputs((prev) => ({ ...prev, [id]: d.value }));
+                  handleDatasheetChange(id, 'gbb_costperunit', d.value === '' ? 0 : Number(d.value));
+                }}
+                onBlur={() => {
+                  setDatasheetCostInputs((prev) => {
+                    const next = { ...prev };
+                    delete next[id];
+                    return next;
+                  });
+                  handleDatasheetBlur(record);
+                }}
                 disabled={isSaving}
               />
             </div>
@@ -617,6 +632,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
                 gbb_costperunit: record.gbb_costperunit,
                 gbb_billing: record.gbb_billing,
               });
+              setCostPerUnitInput(String(record.gbb_costperunit));
               setEditingRecord(record);
               setDialogOpen(true);
             }}
@@ -626,7 +642,7 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
             <Text className={styles.listCell}>{BillingLabels[record.gbb_billing] ?? ''}</Text>
             <Text className={styles.listCell}>{record.gbb_tier ?? ''}</Text>
             <Text className={styles.listCell}>{record.gbb_credits.toLocaleString()}</Text>
-            <Text className={styles.listCell}>{record.gbb_costperunit.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</Text>
+            <Text className={styles.listCell}>{record.gbb_costperunit.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: record.gbb_costperunit % 1 === 0 ? 0 : 4, maximumFractionDigits: record.gbb_costperunit % 1 === 0 ? 0 : 4 })}</Text>
           </div>
         ))}
       </div>
@@ -688,8 +704,9 @@ export const AdminPricing: React.FC<AdminPricingProps> = ({ onBack }) => {
                   type="number"
                   min={0}
                   step="0.01"
-                  value={String(dialogForm.gbb_costperunit)}
-                  onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_costperunit: Number(data.value) || 0 }))}
+                  value={costPerUnitInput}
+                  onChange={(_, data) => setCostPerUnitInput(data.value)}
+                  onBlur={() => setDialogForm((f) => ({ ...f, gbb_costperunit: parseFloat(costPerUnitInput) || 0 }))}
                   required
                 />
               </div>
