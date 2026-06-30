@@ -384,6 +384,7 @@ interface EstimateTableProps {
   workingDaysPerMonth: number;
   toolName: string;
   productId: string;
+  complexityTooltip?: string;
   currentEstimateId: string | null;
   currentEstimateName: string;
   onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'personaId' | 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => void;
@@ -400,6 +401,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
   workingDaysPerMonth,
   toolName,
   productId,
+  complexityTooltip,
   currentEstimateId,
   currentEstimateName,
   onUpdateRow,
@@ -700,7 +702,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           <thead>
             <tr>
               <th className={styles.th}>Persona</th>
-              <th className={styles.thCenter}>Complexity <ComplexityTooltip /></th>
+              <th className={styles.thCenter}>Complexity <ComplexityTooltip key={productId} tooltipJson={complexityTooltip} /></th>
               <th className={styles.thCenter}>Users</th>
               <th className={styles.thCenter}>Sessions/Day</th>
               <th className={styles.thCenter}>Months</th>

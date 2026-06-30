@@ -142,6 +142,7 @@ const AppContent: React.FC = () => {
         id: p.gbb_calculatorproductid,
         name: p.gbb_name,
         sortOrder: p.gbb_sortorder,
+        complexityTooltip: p.gbb_complexitytooltip,
       }));
       setProducts(items);
       if (items.length > 0 && !activeToolId) {
@@ -211,7 +212,8 @@ const AppContent: React.FC = () => {
     loadPersonas();
   }, [loadPersonas]);
 
-  const activeProductName = products.find((p) => p.id === activeToolId)?.name ?? '';
+  const activeProduct = products.find((p) => p.id === activeToolId);
+  const activeProductName = activeProduct?.name ?? '';
   const activeRows = estimateRows[activeToolId] ?? [];
 
   const handleAddPersona = useCallback(
@@ -395,6 +397,7 @@ const AppContent: React.FC = () => {
               workingDaysPerMonth={workingDaysPerMonth}
               toolName={activeProductName}
               productId={activeToolId}
+              complexityTooltip={activeProduct?.complexityTooltip}
               currentEstimateId={activeEstimate?.id ?? null}
               currentEstimateName={activeEstimate?.name ?? ''}
               onUpdateRow={handleUpdateRow}

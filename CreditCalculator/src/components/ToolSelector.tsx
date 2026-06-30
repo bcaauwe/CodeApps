@@ -27,6 +27,7 @@ export interface ProductItem {
   name: string;
   imageUrl?: string;
   sortOrder?: number;
+  complexityTooltip?: string;
 }
 
 interface ToolSelectorProps {

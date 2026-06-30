@@ -10,10 +10,58 @@ import {
 } from '@fluentui/react-components';
 import { Info16Regular } from '@fluentui/react-icons';
 
+interface ComplexityTooltipLevel {
+  label: string;
+  percentile?: string;
+  description: string;
+}
+
+interface ComplexityTooltipData {
+  low?: ComplexityTooltipLevel;
+  medium?: ComplexityTooltipLevel;
+  high?: ComplexityTooltipLevel;
+  veryHigh?: ComplexityTooltipLevel;
+}
+
+interface ComplexityTooltipProps {
+  tooltipJson?: string;
+}
+
+const LEVEL_ORDER: (keyof ComplexityTooltipData)[] = ['low', 'medium', 'high', 'veryHigh'];
+
+const HEADER_STYLES: Record<keyof ComplexityTooltipData, { color: string; border: string }> = {
+  low: { color: tokens.colorPaletteGreenForeground1, border: tokens.colorPaletteGreenBorder1 },
+  medium: { color: tokens.colorPaletteMarigoldForeground1, border: tokens.colorPaletteMarigoldBorder1 },
+  high: { color: tokens.colorPaletteRedForeground1, border: tokens.colorPaletteRedBorder1 },
+  veryHigh: { color: tokens.colorNeutralForeground1, border: tokens.colorNeutralStroke1 },
+};
+
+const DEFAULT_TOOLTIP: ComplexityTooltipData = {
+  low: {
+    label: 'Low',
+    percentile: '5th–35th percentile',
+    description: 'Small amount of work completed in a short conversation or run with minimal steps and quick completion',
+  },
+  medium: {
+    label: 'Medium',
+    percentile: '35th–65th percentile',
+    description: 'Moderate work in longer conversations or runs combining a few steps or inputs into a structured result',
+  },
+  high: {
+    label: 'High',
+    percentile: '65th–85th percentile',
+    description: 'Larger work in extended conversations or runs spanning multiple steps, inputs, or systems to produce detailed results',
+  },
+  veryHigh: {
+    label: 'Very High',
+    percentile: '85th–95th percentile',
+    description: 'Most intensive work in long-running conversations or runs with many steps, large inputs, or sustained processing to produce comprehensive results',
+  },
+};
+
 const useStyles = makeStyles({
   grid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr 1fr',
     gap: tokens.spacingHorizontalM,
     maxWidth: '800px',
   },
@@ -21,34 +69,6 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalXS,
-  },
-  lowHeader: {
-    fontWeight: tokens.fontWeightBold,
-    color: tokens.colorPaletteGreenForeground1,
-    fontSize: tokens.fontSizeBase300,
-    borderBottom: `2px solid ${tokens.colorPaletteGreenBorder1}`,
-    paddingBottom: tokens.spacingVerticalXS,
-  },
-  mediumHeader: {
-    fontWeight: tokens.fontWeightBold,
-    color: tokens.colorPaletteMarigoldForeground1,
-    fontSize: tokens.fontSizeBase300,
-    borderBottom: `2px solid ${tokens.colorPaletteMarigoldBorder1}`,
-    paddingBottom: tokens.spacingVerticalXS,
-  },
-  highHeader: {
-    fontWeight: tokens.fontWeightBold,
-    color: tokens.colorPaletteRedForeground1,
-    fontSize: tokens.fontSizeBase300,
-    borderBottom: `2px solid ${tokens.colorPaletteRedBorder1}`,
-    paddingBottom: tokens.spacingVerticalXS,
-  },
-  veryHighHeader: {
-    fontWeight: tokens.fontWeightBold,
-    color: tokens.colorNeutralForeground1,
-    fontSize: tokens.fontSizeBase300,
-    borderBottom: `2px solid ${tokens.colorNeutralStroke1}`,
-    paddingBottom: tokens.spacingVerticalXS,
   },
   description: {
     fontSize: tokens.fontSizeBase200,
@@ -63,8 +83,20 @@ const useStyles = makeStyles({
   },
 });
 
-export const ComplexityTooltip: React.FC = () => {
+export const ComplexityTooltip: React.FC<ComplexityTooltipProps> = ({ tooltipJson }) => {
   const styles = useStyles();
+
+  let data: ComplexityTooltipData = DEFAULT_TOOLTIP;
+  if (tooltipJson) {
+    try {
+      data = JSON.parse(tooltipJson) as ComplexityTooltipData;
+    } catch {
+      // Fall back to default on invalid JSON
+    }
+  }
+
+  const levels = LEVEL_ORDER.filter((key) => data[key]);
+  const columnCount = levels.length;
 
   return (
     <Popover withArrow>
@@ -77,31 +109,36 @@ export const ComplexityTooltip: React.FC = () => {
         />
       </PopoverTrigger>
       <PopoverSurface>
-        <div className={styles.grid}>
-          <div className={styles.column}>
-            <Text className={styles.lowHeader}>Low <Text className={styles.percentile}>(5th–35th percentile)</Text></Text>
-            <Text className={styles.description}>
-              Small amount of work completed in a short conversation or run with minimal steps and quick completion
-            </Text>
-          </div>
-          <div className={styles.column}>
-            <Text className={styles.mediumHeader}>Medium <Text className={styles.percentile}>(35th–65th percentile)</Text></Text>
-            <Text className={styles.description}>
-              Moderate work in longer conversations or runs combining a few steps or inputs into a structured result
-            </Text>
-          </div>
-          <div className={styles.column}>
-            <Text className={styles.highHeader}>High <Text className={styles.percentile}>(65th–85th percentile)</Text></Text>
-            <Text className={styles.description}>
-              Larger work in extended conversations or runs spanning multiple steps, inputs, or systems to produce detailed results
-            </Text>
-          </div>
-          <div className={styles.column}>
-            <Text className={styles.veryHighHeader}>Very High <Text className={styles.percentile}>(85th–95th percentile)</Text></Text>
-            <Text className={styles.description}>
-              Most intensive work in long-running conversations or runs with many steps, large inputs, or sustained processing to produce comprehensive results
-            </Text>
-          </div>
+        <div
+          className={styles.grid}
+          style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+        >
+          {levels.map((key) => {
+            const level = data[key]!;
+            const headerStyle = HEADER_STYLES[key];
+            return (
+              <div key={key} className={styles.column}>
+                <Text
+                  style={{
+                    fontWeight: tokens.fontWeightBold,
+                    color: headerStyle.color,
+                    fontSize: tokens.fontSizeBase300,
+                    borderBottom: `2px solid ${headerStyle.border}`,
+                    paddingBottom: tokens.spacingVerticalXS,
+                  }}
+                >
+                  {level.label}
+                  {level.percentile && (
+                    <>
+                      {' '}
+                      <Text className={styles.percentile}>({level.percentile})</Text>
+                    </>
+                  )}
+                </Text>
+                <Text className={styles.description}>{level.description}</Text>
+              </div>
+            );
+          })}
         </div>
       </PopoverSurface>
     </Popover>

@@ -4,6 +4,7 @@ import {
   Input,
   Spinner,
   Text,
+  Textarea,
   makeStyles,
   tokens,
   Dialog,
@@ -28,6 +29,7 @@ import {
   Image24Regular,
   Dismiss16Regular,
 } from '@fluentui/react-icons';
+import { ComplexityTooltip } from './ComplexityTooltip';
 import JSZip from 'jszip';
 import { Gbb_calculatorproductsService } from '../generated/services/Gbb_calculatorproductsService';
 import type { Gbb_calculatorproducts } from '../generated/models/Gbb_calculatorproductsModel';
@@ -39,6 +41,7 @@ interface AdminProductsProps {
 type ProductFormData = {
   gbb_name: string;
   gbb_sortorder: number;
+  gbb_complexitytooltip: string;
 };
 
 const useStyles = makeStyles({
@@ -205,6 +208,7 @@ const useStyles = makeStyles({
 const emptyFormData: ProductFormData = {
   gbb_name: '',
   gbb_sortorder: 0,
+  gbb_complexitytooltip: '',
 };
 
 export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
@@ -337,6 +341,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
     setDialogForm({
       gbb_name: rec.gbb_name,
       gbb_sortorder: rec.gbb_sortorder ?? 0,
+      gbb_complexitytooltip: rec.gbb_complexitytooltip ?? '',
     });
     setEditingRecord(rec);
     setPendingImageFile(null);
@@ -373,12 +378,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
         await Gbb_calculatorproductsService.update(editingRecord.gbb_calculatorproductid, {
           gbb_name: dialogForm.gbb_name,
           gbb_sortorder: dialogForm.gbb_sortorder,
+          gbb_complexitytooltip: dialogForm.gbb_complexitytooltip || undefined,
         });
         recordId = editingRecord.gbb_calculatorproductid;
       } else {
         const result = await Gbb_calculatorproductsService.create({
           gbb_name: dialogForm.gbb_name,
           gbb_sortorder: dialogForm.gbb_sortorder,
+          gbb_complexitytooltip: dialogForm.gbb_complexitytooltip || undefined,
           statecode: 0,
         });
         recordId = result.data?.gbb_calculatorproductid;
@@ -416,7 +423,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
       const zip = new JSZip();
 
       // Build CSV
-      const headers = ['Name', 'Sort Order', 'Image Filename'];
+      const headers = ['Name', 'Sort Order', 'Image Filename', 'Complexity Tooltip'];
       const csvRows: string[] = [headers.map((h) => `"${h}"`).join(',')];
 
       for (const rec of records) {
@@ -432,10 +439,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
             // Image download failed, skip
           }
         }
+        const tooltipVal = (rec.gbb_complexitytooltip ?? '').replace(/"/g, '""');
         csvRows.push([
           `"${rec.gbb_name.replace(/"/g, '""')}"`,
           String(rec.gbb_sortorder ?? 0),
           `"${imageFilename}"`,
+          `"${tooltipVal}"`,
         ].join(','));
       }
 
@@ -500,7 +509,30 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
         return;
       }
       const csvText = await csvFile.async('string');
-      const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
+      // Quote-aware row splitting to handle JSON with newlines inside quoted fields
+      const lines: string[] = [];
+      let currentLine = '';
+      let inQuotes = false;
+      for (let i = 0; i < csvText.length; i++) {
+        const ch = csvText[i];
+        if (ch === '"') {
+          if (inQuotes && csvText[i + 1] === '"') {
+            currentLine += '""';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+            currentLine += ch;
+          }
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+          if (ch === '\r' && csvText[i + 1] === '\n') i++;
+          if (currentLine.trim()) lines.push(currentLine);
+          currentLine = '';
+        } else {
+          currentLine += ch;
+        }
+      }
+      if (currentLine.trim()) lines.push(currentLine);
+
       if (lines.length < 2) {
         alert('CSV file is empty or has no data rows.');
         return;
@@ -510,6 +542,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
       const nameIdx = headers.findIndex((h) => h === 'name');
       const sortIdx = headers.findIndex((h) => h.includes('sort'));
       const imageIdx = headers.findIndex((h) => h.includes('image'));
+      const tooltipIdx = headers.findIndex((h) => h.includes('complexity') || h.includes('tooltip'));
 
       let successCount = 0;
       let failCount = 0;
@@ -521,11 +554,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
         const name = nameIdx >= 0 ? cols[nameIdx] : '';
         const sortOrder = sortIdx >= 0 ? Number(cols[sortIdx]) || 0 : 0;
         const imageFilename = imageIdx >= 0 ? cols[imageIdx] : '';
+        const tooltipJson = tooltipIdx >= 0 ? cols[tooltipIdx] : '';
 
         try {
           const result = await Gbb_calculatorproductsService.create({
             gbb_name: name,
             gbb_sortorder: sortOrder,
+            gbb_complexitytooltip: tooltipJson || undefined,
             statecode: 0,
           });
           const newId = result.data?.gbb_calculatorproductid;
@@ -683,6 +718,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
               setDialogForm({
                 gbb_name: record.gbb_name,
                 gbb_sortorder: record.gbb_sortorder ?? 0,
+                gbb_complexitytooltip: record.gbb_complexitytooltip ?? '',
               });
               setEditingRecord(record);
               setPendingImageFile(null);
@@ -762,6 +798,20 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onBack }) => {
                 <Text size={200} style={{ color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS }}>
                   Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF
                 </Text>
+              </div>
+              <div className={styles.fieldGroup}>
+                <Text className={styles.fieldLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
+                  Complexity Tooltip (JSON)
+                  {dialogForm.gbb_complexitytooltip && <ComplexityTooltip tooltipJson={dialogForm.gbb_complexitytooltip} />}
+                </Text>
+                <Textarea
+                  value={dialogForm.gbb_complexitytooltip}
+                  onChange={(_, data) => setDialogForm((f) => ({ ...f, gbb_complexitytooltip: data.value }))}
+                  rows={6}
+                  resize="vertical"
+                  placeholder='{"low":{"label":"Low","description":"..."},"medium":{"label":"Medium","description":"..."}}'
+                  style={{ fontFamily: 'monospace', fontSize: tokens.fontSizeBase200 }}
+                />
               </div>
             </DialogContent>
             <DialogActions>

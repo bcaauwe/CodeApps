@@ -440,6 +440,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
       id: p.gbb_calculatorproductid,
       name: p.gbb_name,
       sortOrder: p.gbb_sortorder,
+      complexityTooltip: p.gbb_complexitytooltip,
     }));
     setProducts(items);
   }, []);
@@ -1040,7 +1041,7 @@ export const AdminPersonas: React.FC<AdminPersonasProps> = ({ onBack }) => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacingVerticalS }}>
                 <Text className={styles.fieldLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: tokens.spacingHorizontalXS }}>
                   Credits per Session (Min – Max)<span className={styles.requiredIndicator}> *</span>
-                  <ComplexityTooltip />
+                  <ComplexityTooltip tooltipJson={products.find((p) => p.id === dialogPersona.productId)?.complexityTooltip} />
                 </Text>
                 {ALL_COMPLEXITY_LEVELS.filter((l) => !dialogPersona.complexity[l]).length > 0 && (
                   <Dropdown
