@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Card,
@@ -7,7 +7,9 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { ArrowLeft24Regular, DataPie24Regular } from '@fluentui/react-icons';
+import { ArrowLeft24Regular, ArrowDownload24Regular, DataPie24Regular } from '@fluentui/react-icons';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -112,6 +114,8 @@ interface EstimateSummaryProps {
 
 export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, onBack, workingDaysPerMonth, products: productItems }) => {
   const styles = useStyles();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [estimate, setEstimate] = useState<Gbb_calculatorestimates | null>(null);
   const [productCredits, setProductCredits] = useState<ProductCredits[]>([]);
@@ -199,6 +203,55 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (!contentRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const contentWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+      let yOffset = 0;
+      let remainingHeight = imgHeight;
+
+      while (remainingHeight > 0) {
+        if (yOffset > 0) pdf.addPage();
+        const sourceY = (yOffset / imgHeight) * canvas.height;
+        const sliceHeight = Math.min(
+          ((pageHeight - margin * 2) / imgHeight) * canvas.height,
+          canvas.height - sourceY
+        );
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeight;
+        const ctx = sliceCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+          const sliceData = sliceCanvas.toDataURL('image/png');
+          const sliceImgHeight = (sliceHeight * contentWidth) / canvas.width;
+          pdf.addImage(sliceData, 'PNG', margin, margin, contentWidth, sliceImgHeight);
+        }
+        yOffset += pageHeight - margin * 2;
+        remainingHeight -= pageHeight - margin * 2;
+      }
+
+      const fileName = `${estimate?.gbb_name ?? 'Estimate'} - Summary.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  }, [estimate]);
 
   const totalMin = productCredits.reduce((sum, p) => sum + p.minCredits, 0);
   const totalMax = productCredits.reduce((sum, p) => sum + p.maxCredits, 0);
@@ -306,14 +359,23 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
     <div>
       <div className={styles.header}>
         <Button appearance="subtle" icon={<ArrowLeft24Regular />} onClick={onBack} aria-label="Back" />
-        <div>
+        <div style={{ flexGrow: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}>
             <DataPie24Regular />
             <Text className={styles.title}>{estimate?.gbb_name ?? 'Estimate'}</Text>
           </div>
           <Text className={styles.subtitle} style={{ display: 'block', marginTop: '4px' }}>Executive Summary</Text>
         </div>
+        <Button
+          appearance="primary"
+          icon={<ArrowDownload24Regular />}
+          onClick={handleExportPdf}
+          disabled={exporting}
+        >
+          {exporting ? 'Exporting…' : 'Export PDF'}
+        </Button>
       </div>
+      <div ref={contentRef}>
 
       {/* Totals */}
       <div className={styles.totalCard}>
@@ -525,6 +587,7 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
             </table>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );

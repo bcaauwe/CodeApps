@@ -12,6 +12,8 @@
     "@fluentui/react-components": "^9.56.0",
     "@fluentui/react-icons": "^2.0.266",
     "@microsoft/power-apps": "^1.2.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
