@@ -42,6 +42,7 @@ interface SaveEstimateDialogProps {
   productId: string;
   productName: string;
   workingDaysPerMonth: number;
+  parentEstimateId?: string | null;
   onSaved: (estimateId: string, estimateName: string) => void;
 }
 
@@ -57,6 +58,7 @@ export const SaveEstimateDialog: React.FC<SaveEstimateDialogProps> = ({
   productId,
   productName,
   workingDaysPerMonth,
+  parentEstimateId,
   onSaved,
 }) => {
   const styles = useStyles();
@@ -81,6 +83,7 @@ export const SaveEstimateDialog: React.FC<SaveEstimateDialogProps> = ({
       const estimateResult = await Gbb_calculatorproductestimatesService.create({
         gbb_name: estimateName.trim(),
         "gbb_Product@odata.bind": `/gbb_calculatorproducts(${productId})`,
+        ...(parentEstimateId ? { "gbb_Estimate@odata.bind": `/gbb_calculatorestimates(${parentEstimateId})` } : {}),
         gbb_workingdays: workingDaysPerMonth,
         statecode: 0,
       } as any);
@@ -109,7 +112,6 @@ export const SaveEstimateDialog: React.FC<SaveEstimateDialogProps> = ({
         }
 
         await Gbb_calculatorestimatelinesService.create({
-          gbb_name: `${estimateName.trim()} - Line`,
           "gbb_Complexity@odata.bind": `/gbb_calculatorpersonacomplexities(${complexityId})`,
           "gbb_ProductEstimate@odata.bind": `/gbb_calculatorproductestimates(${estimateId})`,
           gbb_sessions: row.sessionsPerDay,

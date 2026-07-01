@@ -105,6 +105,22 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
       </div>
 
       <div className={styles.grid}>
+        <Card className={styles.card} onClick={() => onNavigate('admin-products')}>
+          <div className={styles.cardContent}>
+            <Apps24Regular className={styles.cardIcon} />
+            <div className={styles.cardText}>
+              <Text className={styles.cardTitle}>Products</Text>
+              <Text className={styles.cardDescription}>Manage products used in credit calculations</Text>
+              {configStatus.products === false && (
+                <div className={styles.configRequired}>
+                  <Warning16Regular />
+                  <span>Configuration Required</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
         <Card className={styles.card} onClick={() => onNavigate('admin-personas')}>
           <div className={styles.cardContent}>
             <People24Regular className={styles.cardIcon} />
@@ -128,22 +144,6 @@ export const SettingsHub: React.FC<SettingsHubProps> = ({ onNavigate, onBack, us
               <Text className={styles.cardTitle}>Pricing</Text>
               <Text className={styles.cardDescription}>Configure credit pricing models and tiers</Text>
               {configStatus.pricing === false && (
-                <div className={styles.configRequired}>
-                  <Warning16Regular />
-                  <span>Configuration Required</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-
-        <Card className={styles.card} onClick={() => onNavigate('admin-products')}>
-          <div className={styles.cardContent}>
-            <Apps24Regular className={styles.cardIcon} />
-            <div className={styles.cardText}>
-              <Text className={styles.cardTitle}>Products</Text>
-              <Text className={styles.cardDescription}>Manage products used in credit calculations</Text>
-              {configStatus.products === false && (
                 <div className={styles.configRequired}>
                   <Warning16Regular />
                   <span>Configuration Required</span>

@@ -201,18 +201,20 @@ interface SaveButtonProps {
   currentEstimateId: string;
   currentEstimateName: string;
   workingDaysPerMonth: number;
+  parentEstimateId?: string | null;
 }
 
-const SaveButton: React.FC<SaveButtonProps> = ({ rows, currentEstimateId, currentEstimateName, workingDaysPerMonth }) => {
+const SaveButton: React.FC<SaveButtonProps> = ({ rows, currentEstimateId, currentEstimateName, workingDaysPerMonth, parentEstimateId }) => {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Update the estimate name (in case it changed, keep it the same for now)
+      // Update the estimate name and link to parent calculator estimate
       await Gbb_calculatorproductestimatesService.update(currentEstimateId, {
         gbb_name: currentEstimateName,
         gbb_workingdays: workingDaysPerMonth,
+        ...(parentEstimateId ? { "gbb_Estimate@odata.bind": `/gbb_calculatorestimates(${parentEstimateId})` } : {}),
       });
 
       // Delete existing lines for this estimate
@@ -237,7 +239,6 @@ const SaveButton: React.FC<SaveButtonProps> = ({ rows, currentEstimateId, curren
         if (!complexityId) continue;
 
         await Gbb_calculatorestimatelinesService.create({
-          gbb_name: `${currentEstimateName} - Line`,
           "gbb_Complexity@odata.bind": `/gbb_calculatorpersonacomplexities(${complexityId})`,
           "gbb_ProductEstimate@odata.bind": `/gbb_calculatorproductestimates(${currentEstimateId})`,
           gbb_sessions: row.sessionsPerDay,
@@ -387,6 +388,7 @@ interface EstimateTableProps {
   complexityTooltip?: string;
   currentEstimateId: string | null;
   currentEstimateName: string;
+  parentEstimateId?: string | null;
   onUpdateRow: (rowId: string, field: keyof Pick<EstimateRow, 'personaId' | 'complexityLevel' | 'userCount' | 'sessionsPerDay' | 'months'>, value: string | number) => void;
   onRemoveRow: (rowId: string) => void;
   onEstimateSaved: (estimateId: string, estimateName: string) => void;
@@ -405,6 +407,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
   complexityTooltip,
   currentEstimateId,
   currentEstimateName,
+  parentEstimateId,
   onUpdateRow,
   onRemoveRow,
   onEstimateSaved,
@@ -633,6 +636,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
         <div className={styles.exportRow}>
           <LoadEstimateDialog
             productId={productId}
+            parentEstimateId={parentEstimateId}
             onLoad={onEstimateLoaded}
           />
         </div>
@@ -661,6 +665,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
             currentEstimateId={currentEstimateId}
             currentEstimateName={currentEstimateName}
             workingDaysPerMonth={workingDaysPerMonth}
+            parentEstimateId={parentEstimateId}
           />
         )}
         <SaveEstimateDialog
@@ -668,6 +673,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           productId={productId}
           productName={toolName}
           workingDaysPerMonth={workingDaysPerMonth}
+          parentEstimateId={parentEstimateId}
           onSaved={onEstimateSaved}
         />
         {currentEstimateId && (

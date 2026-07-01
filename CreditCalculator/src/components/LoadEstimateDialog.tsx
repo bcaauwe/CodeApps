@@ -73,11 +73,13 @@ const COMPLEXITY_CHOICE_TO_KEY: Record<number, ComplexityKey> = {
 
 interface LoadEstimateDialogProps {
   productId: string;
+  parentEstimateId?: string | null;
   onLoad: (estimateId: string, estimateName: string, rows: EstimateRow[]) => void;
 }
 
 export const LoadEstimateDialog: React.FC<LoadEstimateDialogProps> = ({
   productId,
+  parentEstimateId,
   onLoad,
 }) => {
   const styles = useStyles();
@@ -92,17 +94,31 @@ export const LoadEstimateDialog: React.FC<LoadEstimateDialogProps> = ({
     setLoading(true);
     setError('');
     try {
-      const result = await Gbb_calculatorproductestimatesService.getAll({
-        filter: `_gbb_product_value eq '${productId}' and statecode eq 0`,
-      });
-      setEstimates(result.data ?? []);
+      // Build filter: by product, and optionally also by parent estimate
+      let filter = `_gbb_product_value eq '${productId}' and statecode eq 0`;
+      if (parentEstimateId) {
+        filter = `_gbb_product_value eq '${productId}' and _gbb_estimate_value eq '${parentEstimateId}' and statecode eq 0`;
+      }
+      const result = await Gbb_calculatorproductestimatesService.getAll({ filter });
+      const linked = result.data ?? [];
+
+      // If we have a parent estimate, also show product estimates not linked (standalone for this product)
+      if (parentEstimateId) {
+        const standaloneResult = await Gbb_calculatorproductestimatesService.getAll({
+          filter: `_gbb_product_value eq '${productId}' and _gbb_estimate_value eq null and statecode eq 0`,
+        });
+        const standalone = standaloneResult.data ?? [];
+        setEstimates([...linked, ...standalone]);
+      } else {
+        setEstimates(linked);
+      }
     } catch (err) {
       console.error('Failed to load estimates:', err);
       setError('Failed to load estimates.');
     } finally {
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, parentEstimateId]);
 
   useEffect(() => {
     if (open) {

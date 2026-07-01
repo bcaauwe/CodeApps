@@ -5,6 +5,7 @@ import {
   tokens,
   Text,
   Button,
+  Input,
   Menu,
   MenuTrigger,
   MenuPopover,
@@ -12,7 +13,7 @@ import {
   MenuItem,
   Spinner,
 } from '@fluentui/react-components';
-import { WeatherMoon24Regular, WeatherSunny24Regular, Settings24Regular, People24Regular, Money24Regular, Options24Regular, Apps24Regular, Warning16Regular } from '@fluentui/react-icons';
+import { WeatherMoon24Regular, WeatherSunny24Regular, Settings24Regular, People24Regular, Money24Regular, Options24Regular, Apps24Regular, Warning16Regular, Warning24Regular, ArrowLeft24Regular, DataPie24Regular, Scales24Regular } from '@fluentui/react-icons';
 import { useConfigurationStatus } from './hooks/useConfigurationStatus';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './hooks/useTheme';
@@ -24,14 +25,20 @@ import { AdminPricing } from './components/AdminPricing';
 import { AdminProducts } from './components/AdminProducts';
 import { CalculatorSettings } from './components/CalculatorSettings';
 import { SettingsHub } from './components/SettingsHub';
+import { EstimateList } from './pages/EstimateList';
+import { EstimateSummary } from './pages/EstimateSummary';
 import { Gbb_calculatorproductsService } from './generated/services/Gbb_calculatorproductsService';
 import { Gbb_calculatorpersonasService } from './generated/services/Gbb_calculatorpersonasService';
 import { Gbb_calculatorpersonacomplexitiesService } from './generated/services/Gbb_calculatorpersonacomplexitiesService';
 import { Gbb_calculatorsettingsService } from './generated/services/Gbb_calculatorsettingsService';
+import { Gbb_calculatorestimatesService } from './generated/services/Gbb_calculatorestimatesService';
+import { Gbb_calculatorproductestimatesService } from './generated/services/Gbb_calculatorproductestimatesService';
+import { Gbb_calculatorestimatelinesService } from './generated/services/Gbb_calculatorestimatelinesService';
 import { WhoAmIService } from './generated/services/WhoAmIService';
 import { RetrieveUserPrivilegesService } from './generated/services/RetrieveUserPrivilegesService';
 import type { Gbb_calculatorpersonacomplexities } from './generated/models/Gbb_calculatorpersonacomplexitiesModel';
-import type { ToolId, Persona, PersonaComplexity, EstimateRow } from './types';
+import type { Gbb_calculatorestimates } from './generated/models/Gbb_calculatorestimatesModel';
+import type { ToolId, Persona, PersonaComplexity, EstimateRow, ComplexityKey } from './types';
 
 const useStyles = makeStyles({
   shell: {
@@ -53,6 +60,39 @@ const useStyles = makeStyles({
     maxWidth: '1200px',
     margin: '0 auto',
     padding: `${tokens.spacingVerticalXXL} ${tokens.spacingHorizontalXXXL}`,
+  },
+  estimateBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    marginBottom: tokens.spacingVerticalXXL,
+    padding: tokens.spacingVerticalM,
+    backgroundColor: tokens.colorNeutralBackground3,
+    borderRadius: tokens.borderRadiusMedium,
+  },
+  estimateBarFields: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalL,
+    flexGrow: 1,
+  },
+  estimateField: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+  },
+  estimateFieldLabel: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+    fontWeight: tokens.fontWeightSemibold,
+    whiteSpace: 'nowrap',
+  },
+  estimateFieldInput: {
+    width: '80px',
+  },
+  estimateName: {
+    fontSize: tokens.fontSizeBase400,
+    fontWeight: tokens.fontWeightSemibold,
   },
 });
 
@@ -77,7 +117,7 @@ function buildComplexityFromRecords(records: Gbb_calculatorpersonacomplexities[]
   return result;
 }
 
-type Page = 'main' | 'settings' | 'admin-personas' | 'admin-pricing' | 'admin-products' | 'calculator-settings';
+type Page = 'home' | 'estimate-detail' | 'summary' | 'settings' | 'admin-personas' | 'admin-pricing' | 'admin-products' | 'calculator-settings';
 
 let nextRowId = 1;
 
@@ -87,9 +127,15 @@ const AppContent: React.FC = () => {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [activeToolId, setActiveToolId] = useState<ToolId>('');
   const [personas, setPersonas] = useState<Persona[]>([]);
-  const [page, setPage] = useState<Page>('main');
+  const [page, setPage] = useState<Page>('home');
   const [appTitle, setAppTitle] = useState('Copilot Credit Calculator');
   const [workingDaysPerMonth, setWorkingDaysPerMonth] = useState(22);
+
+  // Active estimate state
+  const [activeEstimateId, setActiveEstimateId] = useState<string | null>(null);
+  const [activeEstimateRecord, setActiveEstimateRecord] = useState<Gbb_calculatorestimates | null>(null);
+  const [estimateGrowth, setEstimateGrowth] = useState(10);
+  const [estimateYears, setEstimateYears] = useState(3);
 
   const [estimateRows, setEstimateRows] = useState<Record<ToolId, EstimateRow[]>>({});
   const [currentEstimates, setCurrentEstimates] = useState<Record<ToolId, { id: string; name: string } | null>>({});
@@ -137,6 +183,97 @@ const AppContent: React.FC = () => {
       } catch { /* ignore parse errors */ }
     });
   }, []);
+
+  // Open an estimate: load its record and pre-load linked product estimates
+  const handleOpenEstimate = useCallback(async (estimateId: string) => {
+    const COMPLEXITY_CHOICE_TO_KEY: Record<number, ComplexityKey> = {
+      803430000: 'low',
+      803430001: 'medium',
+      803430002: 'high',
+      803430003: 'veryHigh',
+    };
+
+    try {
+      const result = await Gbb_calculatorestimatesService.get(estimateId);
+      const est = result.data ?? null;
+      setActiveEstimateId(estimateId);
+      setActiveEstimateRecord(est);
+      setEstimateGrowth(est?.gbb_growth ?? 10);
+      setEstimateYears(est?.gbb_years ?? 3);
+
+      // Pre-load product estimates linked to this calculator estimate
+      const newRows: Record<ToolId, EstimateRow[]> = {};
+      const newCurrentEstimates: Record<ToolId, { id: string; name: string } | null> = {};
+
+      const prodEstResult = await Gbb_calculatorproductestimatesService.getAll({
+        filter: `_gbb_estimate_value eq '${estimateId}' and statecode eq 0`,
+      });
+      const productEstimates = prodEstResult.data ?? [];
+
+      for (const pe of productEstimates) {
+        const productId = pe._gbb_product_value;
+        if (!productId) continue;
+
+        // Load estimate lines for this product estimate
+        const linesResult = await Gbb_calculatorestimatelinesService.getAll({
+          filter: `_gbb_productestimate_value eq '${pe.gbb_calculatorproductestimateid}' and statecode eq 0`,
+        });
+        const lines = linesResult.data ?? [];
+
+        const rows: EstimateRow[] = [];
+        for (let idx = 0; idx < lines.length; idx++) {
+          const line = lines[idx];
+          let personaId = '';
+          let complexityLevel: ComplexityKey = 'medium';
+
+          if (line._gbb_complexity_value) {
+            try {
+              const complexityResult = await Gbb_calculatorpersonacomplexitiesService.get(line._gbb_complexity_value);
+              const rec = complexityResult.data;
+              if (rec) {
+                personaId = rec._gbb_persona_value ?? '';
+                const level = rec.gbb_complexity !== undefined ? COMPLEXITY_CHOICE_TO_KEY[rec.gbb_complexity] : undefined;
+                if (level) complexityLevel = level;
+              }
+            } catch { /* skip */ }
+          }
+
+          rows.push({
+            id: String(Date.now() + idx),
+            personaId,
+            complexityLevel,
+            userCount: line.gbb_users,
+            sessionsPerDay: line.gbb_sessions,
+            months: line.gbb_months ?? 12,
+          });
+        }
+
+        newRows[productId] = rows;
+        newCurrentEstimates[productId] = { id: pe.gbb_calculatorproductestimateid, name: pe.gbb_name ?? '' };
+      }
+
+      setEstimateRows(newRows);
+      setCurrentEstimates(newCurrentEstimates);
+      setPage('estimate-detail');
+    } catch (err) {
+      console.error('Failed to open estimate:', err);
+    }
+  }, []);
+
+  // Save growth/years back to Dataverse when changed
+  const handleGrowthChange = useCallback((value: number) => {
+    setEstimateGrowth(value);
+    if (activeEstimateId) {
+      Gbb_calculatorestimatesService.update(activeEstimateId, { gbb_growth: value }).catch(console.error);
+    }
+  }, [activeEstimateId]);
+
+  const handleYearsChange = useCallback((value: number) => {
+    setEstimateYears(value);
+    if (activeEstimateId) {
+      Gbb_calculatorestimatesService.update(activeEstimateId, { gbb_years: value }).catch(console.error);
+    }
+  }, [activeEstimateId]);
 
   const loadProducts = useCallback(async () => {
     const result = await Gbb_calculatorproductsService.getAll({ filter: 'statecode eq 0', orderBy: ['gbb_sortorder asc'] });
@@ -216,7 +353,7 @@ const AppContent: React.FC = () => {
   }, [activeToolId]);
 
   useEffect(() => {
-    if (page === 'main') {
+    if (page === 'estimate-detail') {
       loadPersonas();
     }
   }, [loadPersonas, page]);
@@ -337,14 +474,14 @@ const AppContent: React.FC = () => {
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
+                <MenuItem icon={<Apps24Regular />} onClick={() => setPage('admin-products')}>
+                  Products {configStatus.products === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
+                </MenuItem>
                 <MenuItem icon={<People24Regular />} onClick={() => setPage('admin-personas')}>
                   Personas {configStatus.personas === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
                 <MenuItem icon={<Money24Regular />} onClick={() => setPage('admin-pricing')}>
                   Pricing {configStatus.pricing === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
-                </MenuItem>
-                <MenuItem icon={<Apps24Regular />} onClick={() => setPage('admin-products')}>
-                  Products {configStatus.products === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
                 </MenuItem>
                 <MenuItem icon={<Options24Regular />} onClick={() => setPage('calculator-settings')} disabled={canCreateCalculatorSetting === false}>
                   Calculator Settings {configStatus.calculatorSettings === false && <Warning16Regular color={tokens.colorPaletteYellowForeground2} />}
@@ -365,10 +502,62 @@ const AppContent: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: tokens.spacingVerticalXXXL }}>
             <Spinner size="large" label="Loading..." />
           </div>
+        ) : page === 'home' ? (
+          !configStatus.loading && (configStatus.products === false || configStatus.personas === false || configStatus.pricing === false || configStatus.calculatorSettings === false) ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
+              <Warning24Regular style={{ fontSize: '48px', color: tokens.colorPaletteYellowForeground2 }} />
+              <Text size={400} weight="semibold">Configuration Needed</Text>
+              <Text size={300} style={{ color: tokens.colorNeutralForeground2, textAlign: 'center', maxWidth: '480px' }}>
+                The calculator requires configuration before estimates can be created. Please complete the setup in the Settings Hub.
+              </Text>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, alignItems: 'flex-start', marginTop: tokens.spacingVerticalM }}>
+                {configStatus.products === false && (
+                  <Text size={200} style={{ color: tokens.colorPaletteYellowForeground2 }}>
+                    <Warning16Regular /> Products not configured
+                  </Text>
+                )}
+                {configStatus.personas === false && (
+                  <Text size={200} style={{ color: tokens.colorPaletteYellowForeground2 }}>
+                    <Warning16Regular /> Personas not configured
+                  </Text>
+                )}
+                {configStatus.pricing === false && (
+                  <Text size={200} style={{ color: tokens.colorPaletteYellowForeground2 }}>
+                    <Warning16Regular /> Pricing not configured
+                  </Text>
+                )}
+                {configStatus.calculatorSettings === false && (
+                  <Text size={200} style={{ color: tokens.colorPaletteYellowForeground2 }}>
+                    <Warning16Regular /> Calculator settings not configured
+                  </Text>
+                )}
+              </div>
+              <Button appearance="primary" icon={<Settings24Regular />} onClick={() => setPage('settings')} style={{ marginTop: tokens.spacingVerticalM }}>
+                Go to Settings Hub
+              </Button>
+            </div>
+          ) : (
+            <>
+              <EstimateList onOpenEstimate={handleOpenEstimate} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: tokens.spacingHorizontalM, marginTop: tokens.spacingVerticalXXL, padding: tokens.spacingVerticalM, backgroundColor: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusMedium }}>
+                <Scales24Regular style={{ color: tokens.colorNeutralForeground3, flexShrink: 0, marginTop: '2px' }} />
+                <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+                  The Copilot Credit calculator is not a binding offer nor a guarantee of the final cost or availability of any product. The estimates should be regarded only as directional in nature and intended solely to support business planning and NOT incorporated into a contractual agreement. The actual amount of message consumption and associated cost may vary depending on the region, availability, workload usage, number of users, and other factors. You may contact your Microsoft representative before making any customer recommendations or purchase decisions. 
+                </Text>
+              </div>
+            </>
+          )
+        ) : page === 'summary' && activeEstimateId ? (
+          <EstimateSummary
+            estimateId={activeEstimateId}
+            onBack={() => setPage('estimate-detail')}
+            workingDaysPerMonth={workingDaysPerMonth}
+            products={products}
+          />
         ) : page === 'settings' ? (
           <SettingsHub
             onNavigate={(p) => setPage(p)}
-            onBack={() => setPage('main')}
+            onBack={() => setPage(activeEstimateId ? 'estimate-detail' : 'home')}
             userPrivileges={userPrivileges}
           />
         ) : page === 'admin-personas' ? (
@@ -414,6 +603,43 @@ const AppContent: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Estimate header bar with back, name, growth, years, summary */}
+            <div className={styles.estimateBar}>
+              <Button appearance="subtle" icon={<ArrowLeft24Regular />} onClick={() => { setPage('home'); setActiveEstimateId(null); setActiveEstimateRecord(null); }} aria-label="Back to estimates" />
+              <Text className={styles.estimateName}>{activeEstimateRecord?.gbb_name ?? 'Estimate'}</Text>
+              <div className={styles.estimateBarFields}>
+                <div className={styles.estimateField}>
+                  <Text className={styles.estimateFieldLabel}>Growth %</Text>
+                  <Input
+                    className={styles.estimateFieldInput}
+                    type="number"
+                    size="small"
+                    min={0}
+                    max={100}
+                    value={String(estimateGrowth)}
+                    onChange={(_, d) => setEstimateGrowth(Number(d.value) || 0)}
+                    onBlur={() => handleGrowthChange(estimateGrowth)}
+                  />
+                </div>
+                <div className={styles.estimateField}>
+                  <Text className={styles.estimateFieldLabel}>Years</Text>
+                  <Input
+                    className={styles.estimateFieldInput}
+                    type="number"
+                    size="small"
+                    min={1}
+                    max={10}
+                    value={String(estimateYears)}
+                    onChange={(_, d) => setEstimateYears(Number(d.value) || 1)}
+                    onBlur={() => handleYearsChange(estimateYears)}
+                  />
+                </div>
+              </div>
+              <Button appearance="primary" icon={<DataPie24Regular />} onClick={() => setPage('summary')}>
+                View Summary
+              </Button>
+            </div>
+
             <ToolSelector activeToolId={activeToolId} products={products} onToolChange={setActiveToolId} />
             {personas.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
@@ -441,6 +667,7 @@ const AppContent: React.FC = () => {
                   complexityTooltip={activeProduct?.complexityTooltip}
                   currentEstimateId={activeEstimate?.id ?? null}
                   currentEstimateName={activeEstimate?.name ?? ''}
+                  parentEstimateId={activeEstimateId}
                   onUpdateRow={handleUpdateRow}
                   onRemoveRow={handleRemoveRow}
                   onEstimateSaved={handleEstimateSaved}
