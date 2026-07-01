@@ -27,18 +27,18 @@ import { CalculatorSettings } from './components/CalculatorSettings';
 import { SettingsHub } from './components/SettingsHub';
 import { EstimateList } from './pages/EstimateList';
 import { EstimateSummary } from './pages/EstimateSummary';
+import { ProductEstimateList } from './components/ProductEstimateList';
 import { Gbb_calculatorproductsService } from './generated/services/Gbb_calculatorproductsService';
 import { Gbb_calculatorpersonasService } from './generated/services/Gbb_calculatorpersonasService';
 import { Gbb_calculatorpersonacomplexitiesService } from './generated/services/Gbb_calculatorpersonacomplexitiesService';
 import { Gbb_calculatorsettingsService } from './generated/services/Gbb_calculatorsettingsService';
 import { Gbb_calculatorestimatesService } from './generated/services/Gbb_calculatorestimatesService';
-import { Gbb_calculatorproductestimatesService } from './generated/services/Gbb_calculatorproductestimatesService';
-import { Gbb_calculatorestimatelinesService } from './generated/services/Gbb_calculatorestimatelinesService';
+
 import { WhoAmIService } from './generated/services/WhoAmIService';
 import { RetrieveUserPrivilegesService } from './generated/services/RetrieveUserPrivilegesService';
 import type { Gbb_calculatorpersonacomplexities } from './generated/models/Gbb_calculatorpersonacomplexitiesModel';
 import type { Gbb_calculatorestimates } from './generated/models/Gbb_calculatorestimatesModel';
-import type { ToolId, Persona, PersonaComplexity, EstimateRow, ComplexityKey } from './types';
+import type { ToolId, Persona, PersonaComplexity, EstimateRow } from './types';
 
 const useStyles = makeStyles({
   shell: {
@@ -184,15 +184,8 @@ const AppContent: React.FC = () => {
     });
   }, []);
 
-  // Open an estimate: load its record and pre-load linked product estimates
+  // Open an estimate: load its record
   const handleOpenEstimate = useCallback(async (estimateId: string) => {
-    const COMPLEXITY_CHOICE_TO_KEY: Record<number, ComplexityKey> = {
-      803430000: 'low',
-      803430001: 'medium',
-      803430002: 'high',
-      803430003: 'veryHigh',
-    };
-
     try {
       const result = await Gbb_calculatorestimatesService.get(estimateId);
       const est = result.data ?? null;
@@ -201,59 +194,9 @@ const AppContent: React.FC = () => {
       setEstimateGrowth(est?.gbb_growth ?? 10);
       setEstimateYears(est?.gbb_years ?? 3);
 
-      // Pre-load product estimates linked to this calculator estimate
-      const newRows: Record<ToolId, EstimateRow[]> = {};
-      const newCurrentEstimates: Record<ToolId, { id: string; name: string } | null> = {};
-
-      const prodEstResult = await Gbb_calculatorproductestimatesService.getAll({
-        filter: `_gbb_estimate_value eq '${estimateId}' and statecode eq 0`,
-      });
-      const productEstimates = prodEstResult.data ?? [];
-
-      for (const pe of productEstimates) {
-        const productId = pe._gbb_product_value;
-        if (!productId) continue;
-
-        // Load estimate lines for this product estimate
-        const linesResult = await Gbb_calculatorestimatelinesService.getAll({
-          filter: `_gbb_productestimate_value eq '${pe.gbb_calculatorproductestimateid}' and statecode eq 0`,
-        });
-        const lines = linesResult.data ?? [];
-
-        const rows: EstimateRow[] = [];
-        for (let idx = 0; idx < lines.length; idx++) {
-          const line = lines[idx];
-          let personaId = '';
-          let complexityLevel: ComplexityKey = 'medium';
-
-          if (line._gbb_complexity_value) {
-            try {
-              const complexityResult = await Gbb_calculatorpersonacomplexitiesService.get(line._gbb_complexity_value);
-              const rec = complexityResult.data;
-              if (rec) {
-                personaId = rec._gbb_persona_value ?? '';
-                const level = rec.gbb_complexity !== undefined ? COMPLEXITY_CHOICE_TO_KEY[rec.gbb_complexity] : undefined;
-                if (level) complexityLevel = level;
-              }
-            } catch { /* skip */ }
-          }
-
-          rows.push({
-            id: String(Date.now() + idx),
-            personaId,
-            complexityLevel,
-            userCount: line.gbb_users,
-            sessionsPerDay: line.gbb_sessions,
-            months: line.gbb_months ?? 12,
-          });
-        }
-
-        newRows[productId] = rows;
-        newCurrentEstimates[productId] = { id: pe.gbb_calculatorproductestimateid, name: pe.gbb_name ?? '' };
-      }
-
-      setEstimateRows(newRows);
-      setCurrentEstimates(newCurrentEstimates);
+      // Clear any previously loaded product estimate state — user will select from the product estimate list
+      setEstimateRows({});
+      setCurrentEstimates({});
       setPage('estimate-detail');
     } catch (err) {
       console.error('Failed to open estimate:', err);
@@ -436,6 +379,37 @@ const AppContent: React.FC = () => {
       [activeToolId]: null,
     }));
   }, [activeToolId]);
+
+  const handleProductEstimateNew = useCallback(
+    (estimateId: string, estimateName: string) => {
+      setEstimateRows((prev) => ({
+        ...prev,
+        [activeToolId]: [],
+      }));
+      setCurrentEstimates((prev) => ({
+        ...prev,
+        [activeToolId]: { id: estimateId, name: estimateName },
+      }));
+    },
+    [activeToolId],
+  );
+
+  const handleProductEstimateDeleted = useCallback(
+    (estimateId: string) => {
+      // If the deleted estimate is the currently active one, clear it
+      if (currentEstimates[activeToolId]?.id === estimateId) {
+        setEstimateRows((prev) => ({
+          ...prev,
+          [activeToolId]: [],
+        }));
+        setCurrentEstimates((prev) => ({
+          ...prev,
+          [activeToolId]: null,
+        }));
+      }
+    },
+    [activeToolId, currentEstimates],
+  );
 
   const handleEstimateClosed = useCallback(() => {
     setEstimateRows((prev) => ({
@@ -641,42 +615,52 @@ const AppContent: React.FC = () => {
             </div>
 
             <ToolSelector activeToolId={activeToolId} products={products} onToolChange={setActiveToolId} />
-            {personas.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
-                <People24Regular style={{ fontSize: '48px', color: tokens.colorNeutralForeground3 }} />
-                <Text size={400} weight="semibold">No personas configured</Text>
-                <Text size={300} style={{ color: tokens.colorNeutralForeground2 }}>
-                  To get started, add personas for this product in the Personas settings screen.
-                </Text>
-                <Button appearance="primary" icon={<People24Regular />} onClick={() => setPage('admin-personas')}>
-                  Go to Personas
-                </Button>
-              </div>
-            ) : (
-              <>
-                <PersonaSelector
-                  personas={personas}
-                  onAddPersona={handleAddPersona}
-                />
-                <EstimateTable
-                  rows={activeRows}
-                  personas={personas}
-                  workingDaysPerMonth={workingDaysPerMonth}
-                  toolName={activeProductName}
-                  productId={activeToolId}
-                  complexityTooltip={activeProduct?.complexityTooltip}
-                  currentEstimateId={activeEstimate?.id ?? null}
-                  currentEstimateName={activeEstimate?.name ?? ''}
-                  parentEstimateId={activeEstimateId}
-                  onUpdateRow={handleUpdateRow}
-                  onRemoveRow={handleRemoveRow}
-                  onEstimateSaved={handleEstimateSaved}
-                  onEstimateLoaded={handleEstimateLoaded}
-                  onEstimateDeleted={handleEstimateDeleted}
-                  onEstimateClosed={handleEstimateClosed}
-                  onNavigateToPricing={() => setPage('admin-pricing')}
-                />
-              </>
+            <ProductEstimateList
+              productId={activeToolId}
+              productName={activeProductName}
+              parentEstimateId={activeEstimateId!}
+              onEstimateLoaded={handleEstimateLoaded}
+              onNewEstimate={handleProductEstimateNew}
+              onEstimateDeleted={handleProductEstimateDeleted}
+            />
+            {activeEstimate && (
+              personas.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tokens.spacingVerticalL, marginTop: tokens.spacingVerticalXXXL }}>
+                  <People24Regular style={{ fontSize: '48px', color: tokens.colorNeutralForeground3 }} />
+                  <Text size={400} weight="semibold">No personas configured</Text>
+                  <Text size={300} style={{ color: tokens.colorNeutralForeground2 }}>
+                    To get started, add personas for this product in the Personas settings screen.
+                  </Text>
+                  <Button appearance="primary" icon={<People24Regular />} onClick={() => setPage('admin-personas')}>
+                    Go to Personas
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <PersonaSelector
+                    personas={personas}
+                    onAddPersona={handleAddPersona}
+                  />
+                  <EstimateTable
+                    rows={activeRows}
+                    personas={personas}
+                    workingDaysPerMonth={workingDaysPerMonth}
+                    toolName={activeProductName}
+                    productId={activeToolId}
+                    complexityTooltip={activeProduct?.complexityTooltip}
+                    currentEstimateId={activeEstimate?.id ?? null}
+                    currentEstimateName={activeEstimate?.name ?? ''}
+                    parentEstimateId={activeEstimateId}
+                    onUpdateRow={handleUpdateRow}
+                    onRemoveRow={handleRemoveRow}
+                    onEstimateSaved={handleEstimateSaved}
+                    onEstimateLoaded={handleEstimateLoaded}
+                    onEstimateDeleted={handleEstimateDeleted}
+                    onEstimateClosed={handleEstimateClosed}
+                    onNavigateToPricing={() => setPage('admin-pricing')}
+                  />
+                </>
+              )
             )}
           </>
         )}

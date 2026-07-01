@@ -258,7 +258,6 @@ const SaveButton: React.FC<SaveButtonProps> = ({ rows, currentEstimateId, curren
     <Button
       appearance="primary"
       icon={saving ? <Spinner size="tiny" /> : <Save24Regular />}
-      size="small"
       onClick={handleSave}
       disabled={saving || rows.length === 0}
     >
@@ -299,7 +298,6 @@ const DeleteEstimateButton: React.FC<DeleteEstimateButtonProps> = ({ currentEsti
     <Button
       appearance="secondary"
       icon={deleting ? <Spinner size="tiny" /> : <Delete24Regular />}
-      size="small"
       onClick={handleDelete}
       disabled={deleting}
     >
@@ -686,17 +684,8 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
           appearance="secondary"
           icon={<Dismiss24Regular />}
           onClick={onEstimateClosed}
-          size="small"
         >
           Close
-        </Button>
-        <Button
-          appearance="secondary"
-          icon={<ArrowDownload24Regular />}
-          onClick={exportCsv}
-          size="small"
-        >
-          Export CSV
         </Button>
       </div>
       <Card className={styles.card}>
