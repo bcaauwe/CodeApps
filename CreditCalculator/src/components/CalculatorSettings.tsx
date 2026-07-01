@@ -360,8 +360,6 @@ export const CalculatorSettings: React.FC<CalculatorSettingsProps> = ({ onBack, 
   };
 
   const handleSave = async () => {
-    if (!recordId) return;
-
     // Rebuild the configuration JSON in the original format
     // Group cards back by category
     const categoryMap = new Map<string, SettingsCard[]>();
@@ -382,9 +380,21 @@ export const CalculatorSettings: React.FC<CalculatorSettingsProps> = ({ onBack, 
         })),
       })),
     };
-    await Gbb_calculatorsettingsService.update(recordId, {
-      gbb_configuration: JSON.stringify(config),
-    });
+    const configJson = JSON.stringify(config);
+    if (recordId) {
+      await Gbb_calculatorsettingsService.update(recordId, {
+        gbb_configuration: configJson,
+      });
+    } else {
+      const result = await Gbb_calculatorsettingsService.create({
+        gbb_name: 'default',
+        gbb_configuration: configJson,
+        statecode: 0,
+      });
+      if (result.data) {
+        setRecordId(result.data.gbb_calculatorsettingid);
+      }
+    }
     onSettingsChanged?.(config.settings);
     onBack();
   };

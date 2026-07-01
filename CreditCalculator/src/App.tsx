@@ -10,6 +10,7 @@ import {
   MenuPopover,
   MenuList,
   MenuItem,
+  Spinner,
 } from '@fluentui/react-components';
 import { WeatherMoon24Regular, WeatherSunny24Regular, Settings24Regular, People24Regular, Money24Regular, Options24Regular, Apps24Regular, Warning16Regular } from '@fluentui/react-icons';
 import { useConfigurationStatus } from './hooks/useConfigurationStatus';
@@ -93,6 +94,7 @@ const AppContent: React.FC = () => {
   const [estimateRows, setEstimateRows] = useState<Record<ToolId, EstimateRow[]>>({});
   const [currentEstimates, setCurrentEstimates] = useState<Record<ToolId, { id: string; name: string } | null>>({});
   const [userPrivileges, setUserPrivileges] = useState<Record<string, unknown> | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     async function loadPrivileges() {
@@ -149,6 +151,7 @@ const AppContent: React.FC = () => {
     if (items.length > 0 && !activeToolId) {
       setActiveToolId(items[0].id);
     }
+    setInitialLoading(false);
     // Download images for products that have one
     for (const p of data) {
       if (p.gbb_productimageid) {
@@ -358,7 +361,11 @@ const AppContent: React.FC = () => {
         </div>
       </header>
       <div className={styles.container}>
-        {page === 'settings' ? (
+        {initialLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: tokens.spacingVerticalXXXL }}>
+            <Spinner size="large" label="Loading..." />
+          </div>
+        ) : page === 'settings' ? (
           <SettingsHub
             onNavigate={(p) => setPage(p)}
             onBack={() => setPage('main')}
