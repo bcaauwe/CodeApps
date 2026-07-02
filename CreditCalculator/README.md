@@ -152,7 +152,7 @@ Configure global application settings such as the app title, working days per mo
 
 ## Data Connections
 
-All data is stored in Dataverse using the following custom tables:
+All data is stored in Dataverse using the following custom tables provided by a solution:
 
 | Table | Purpose |
 | --- | --- |
@@ -164,6 +164,8 @@ All data is stored in Dataverse using the following custom tables:
 | Calculator Estimates | Saved estimate headers |
 | Calculator Product Estimates | Per-product estimate groupings |
 | Calculator Estimate Lines | Individual estimate line items |
+
+See [Instructions.md](Instructions.md) for more information on the required solution containing the Dataverse table definition
 
 ## Security
 
