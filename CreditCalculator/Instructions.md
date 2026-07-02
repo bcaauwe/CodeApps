@@ -19,7 +19,7 @@
   - Import solution [CreditCalculatorBase_1_0_0_0.zip](solutions/CreditCalculatorBase_1_0_0_0.zip)
   - Import solution [CreditCalculatorApp_1_0_0_0_managed.zip](solutions/CreditCalculatorApp_1_0_0_0_managed.zip)
 2. **Clone**: If you want to adjust the source of the Code App and deploy to your environments.
-  - Import solution [CreditCalculatorBase_1_0_0_0.zip](solutions/CreditCalculatorBase_1_0_0_0.zip) (includes)
+  - Import solution [CreditCalculatorBase_1_0_0_0.zip](solutions/CreditCalculatorBase_1_0_0_0.zip)
 
 ## Getting Started
 
@@ -29,7 +29,7 @@ The app uses Dataverse security roles to control access to admin features. After
 
 ### Initialization
 
-For deployment option 2 you will use the `npx power-apps` commands to clone, initialize and deploy the code app.  If you are using deployment option 1, skip to the [Importing Template Data] section
+For deployment option 2 you will use the `npx power-apps` commands to clone, initialize and deploy the code app.  If you are using deployment option 1, skip to the [Importing Template Data](#-importing-template-data) section
 
 The `npx power-apps` commands authenticate via your **default browser profile**. The first time you run any command, a browser window will open to process the authentication.
 
