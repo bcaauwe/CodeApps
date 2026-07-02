@@ -18,7 +18,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Delete24Regular, ArrowDownload24Regular, Save24Regular, Dismiss24Regular, PersonSwap24Regular, Warning16Regular, Money24Regular } from '@fluentui/react-icons';
+import { Delete24Regular, Save24Regular, Dismiss24Regular, PersonSwap24Regular, Warning16Regular, Money24Regular } from '@fluentui/react-icons';
 import type { Persona, EstimateRow, ComplexityKey } from '../types';
 import { iconMap } from '../data/icons';
 import { Gbb_calculatorpricingsService } from '../generated/services/Gbb_calculatorpricingsService';
@@ -520,109 +520,7 @@ export const EstimateTable: React.FC<EstimateTableProps> = ({
     return results;
   }, [rows, personas, workingDaysPerMonth, pricingRecords, grandTotalHigh, grandTotalYearlyHigh]);
 
-  const exportCsv = () => {
-    const headers = ['Persona', 'Complexity', 'Users', 'Sessions/Day', 'Months', 'Cr/Session (Min)', 'Cr/Session (Max)', 'Days/Month', 'Credits/Mo (Min)', 'Credits/Mo (Max)'];
-    const csvRows = rows.map((row) => {
-      const persona = getPersona(row.personaId);
-      const level = persona?.complexity[row.complexityLevel];
-      const range = calcCreditsRange(row);
-      return [
-        persona?.name ?? 'Unknown',
-        complexityLabels[row.complexityLevel],
-        row.userCount,
-        row.sessionsPerDay,
-        row.months,
-        level?.creditsPerSessionMin ?? 0,
-        level?.creditsPerSessionMax ?? 0,
-        workingDaysPerMonth,
-        range.low,
-        range.high,
-      ].join(',');
-    });
-    csvRows.push(['Total', '', totalUsers, '', '', '', '', '', grandTotalLow, grandTotalHigh].join(','));
 
-    // Procurement options
-    if (grandTotalHigh > 0 && pricingRecords.length > 0) {
-      csvRows.push('');
-      csvRows.push('Procurement Options');
-      csvRows.push(['Purchase Model', 'Tier', 'Credits Provided', 'Cost/Unit', 'Units', 'Total Credits', 'Cost', 'Billing'].join(','));
-
-      const groupedRecords = new Map<string, Gbb_calculatorpricings[]>();
-      for (const rec of pricingRecords) {
-        const group = rec.gbb_pricinggroup;
-        const existing = groupedRecords.get(group) ?? [];
-        existing.push(rec);
-        groupedRecords.set(group, existing);
-      }
-
-      for (const [, tiers] of groupedRecords) {
-        let bestOption: { rec: Gbb_calculatorpricings; qty: number }[] = [];
-        let bestCost = Infinity;
-
-        // Monthly tiers: multiple units allowed
-        const monthlyTiers = tiers.filter((rec) => rec.gbb_billing === 803430000);
-        for (const rec of monthlyTiers) {
-          const monthlyCredits = rec.gbb_credits;
-          const qty = monthlyCredits > 0 ? Math.ceil(grandTotalHigh / monthlyCredits) : 1;
-          const cost = qty * rec.gbb_costperunit;
-          if (cost < bestCost) {
-            bestOption = [{ rec, qty }];
-            bestCost = cost;
-          }
-        }
-
-        // Yearly tiers: only 1 unit each, compare against yearly credits needed
-        const yearlyTiers = tiers
-          .filter((rec) => rec.gbb_billing === 803430001)
-          .sort((a, b) => b.gbb_credits - a.gbb_credits);
-
-        if (yearlyTiers.length > 0) {
-          const maxSubsetSize = Math.min(yearlyTiers.length, 10);
-          for (let mask = 1; mask < (1 << maxSubsetSize); mask++) {
-            let totalYearlyCredits = 0;
-            let totalCost = 0;
-            const combo: { rec: Gbb_calculatorpricings; qty: number }[] = [];
-            for (let bit = 0; bit < maxSubsetSize; bit++) {
-              if (mask & (1 << bit)) {
-                const tier = yearlyTiers[bit];
-                totalYearlyCredits += tier.gbb_credits;
-                totalCost += tier.gbb_costperunit;
-                combo.push({ rec: tier, qty: 1 });
-              }
-            }
-            if (totalYearlyCredits >= grandTotalYearlyHigh && totalCost < bestCost) {
-              bestOption = combo;
-              bestCost = totalCost;
-            }
-          }
-        }
-
-        for (const c of bestOption) {
-          const cost = c.qty * c.rec.gbb_costperunit;
-          const billingLabel = BillingLabels[c.rec.gbb_billing] ?? '';
-          csvRows.push([
-            `"${c.rec.gbb_name}"`,
-            `"${c.rec.gbb_tier ?? ''}"`,
-            c.rec.gbb_credits,
-            c.rec.gbb_costperunit,
-            c.qty,
-            c.qty * c.rec.gbb_credits,
-            cost.toFixed(2),
-            `"${billingLabel}"`,
-          ].join(','));
-        }
-      }
-    }
-
-    const csv = [headers.join(','), ...csvRows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${toolName.replace(/\s+/g, '_')}_Credit_Estimate.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   if (rows.length === 0) {
     return (

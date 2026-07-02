@@ -17,8 +17,8 @@
 
 1. **Compiled**: If you want to leverage the compiled code app and don't plan on changing any code.
   - Import solution [CreditCalculatorBase_1_0_0_0.zip](solutions/CreditCalculatorBase_1_0_0_0.zip)
-  - Import solution [CreditCalculatorApp](solutions/CreditCalculatorApp_1_0_0_0.zip)
-2. **Clone**: 
+  - Import solution [CreditCalculatorApp_1_0_0_0_managed.zip](solutions/CreditCalculatorApp_1_0_0_0_managed.zip)
+2. **Clone**: If you want to adjust the source of the Code App and deploy to your environments.
   - Import solution [CreditCalculatorBase_1_0_0_0.zip](solutions/CreditCalculatorBase_1_0_0_0.zip) (includes)
 
 ## Getting Started
