@@ -412,13 +412,13 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
                   cy="50%"
                   outerRadius={100}
                   dataKey="value"
-                  label={({ name, percent }: { name: string; percent: number }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ name, percent }) => `${name ?? ''} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                 >
                   {pieData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCredits(value)} />
+                <Tooltip formatter={(value) => formatCredits(Number(value))} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -514,9 +514,7 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
               <LineChart data={growthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
-                <YAxis tickFormatter={(v: number) => formatCredits(v)} />
-                <Tooltip formatter={(value: number) => formatCredits(value)} />
-                <Legend />
+                <YAxis tickFormatter={(v) => formatCredits(Number(v))} />
                 {productCredits.map((p, idx) => (
                   <Line
                     key={p.productId}
@@ -535,6 +533,8 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
                   strokeDasharray="5 5"
                   dot={{ r: 4 }}
                 />
+                <Tooltip formatter={(value) => formatCredits(Number(value))} />
+                <Legend />
               </LineChart>
             </ResponsiveContainer>
           )}
