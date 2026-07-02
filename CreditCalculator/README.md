@@ -27,7 +27,7 @@ The landing page for the Copilot Credit Calculator. From here users can create a
 
 After creating or opening an estimate, users select the products they want to estimate credits for. 
 
-#### Product Estimate - Persona Configuration
+#### Product Estimate - Persona Selection
 
 ![Product Estimate — Persona](screenshots/ProductEstimate-Persona.png)
 
@@ -35,9 +35,11 @@ For each product, one or more personas are assigned to model different usage pat
 
 ---
 
-#### Product Estimate - Procurement Options
+#### Product Estimate - Estimate Table & Procurement Options
 
 ![Product Estimate — Estimate & Procurement](screenshots/ProductEstimate-EstimateAndProcurement.png)
+
+The estimate table is where a user configures the persona settings for complexity level, user counts, sessions per day and months of use. Before any persona is added, a user can also load any product estimate and save it to the estimate, or save as a copy to create a clone and adjust the numbers as desired.
 
 The procurement section surfaces purchasing options based on the persona configuration so users can translate credit estimates into actionable procurement decisions for that product estimate.
 
@@ -77,7 +79,50 @@ The centralized administration area. From the Settings Hub, admins can navigate 
 
 ![Admin Products](screenshots/SettingsHub-Products.png)
 
-Manage the catalog of products available for estimation. Admins can add, edit, and delete product definitions that appear in the product selection step.
+Manage the catalog of products available for estimation. Admins can add, edit, and delete product definitions that appear in the product selection step.  Each product can have unique defintions of complexity so a user can define a JSON payload that will show the definitions in the complexity tooltip using the following schema:
+
+```json
+{
+  "<complexityKey>": {
+    "label": "string — Display name for the complexity level",
+    "percentile": "string — Percentile range (e.g. '5th–35th percentile')",
+    "description": "string — Brief explanation of what this complexity level entails"
+  }
+}
+```
+
+**Example:**
+
+```json
+{
+  "low": {
+    "label": "Low",
+    "percentile": "5th–35th percentile",
+    "description": "Simple Q&A agent with a few topics, basic pre-built responses, and minimal branching logic"
+  },
+  "medium": {
+    "label": "Medium",
+    "percentile": "35th–65th percentile",
+    "description": "Multi-topic agent with conditional branching, entity extraction, and integration to one or two data sources"
+  },
+  "high": {
+    "label": "High",
+    "percentile": "65th–85th percentile",
+    "description": "Advanced agent with generative AI answers, multiple knowledge sources, Power Automate cloud flows, and adaptive cards"
+  },
+  "veryHigh": {
+    "label": "Very High",
+    "percentile": "85th–95th percentile",
+    "description": "Enterprise-grade agent with complex orchestration, multiple plugin actions, custom connectors, authentication, and multi-turn reasoning across systems"
+  }
+}
+```
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `label` | string | Human-readable name shown in the UI |
+| `percentile` | string | Percentile range indicating relative complexity |
+| `description` | string | Explanation of typical characteristics at this level |
 
 ---
 
@@ -85,7 +130,7 @@ Manage the catalog of products available for estimation. Admins can add, edit, a
 
 ![Admin Personas](screenshots/SettingsHub-Personas.png)
 
-Define and manage user personas representing different usage profiles. Each persona includes configurable complexity tiers with min/max credit ranges, enabling granular modeling of consumption patterns.
+Define and manage user personas representing different usage profiles. Each persona includes configurable complexity tiers with min/max credit ranges, enabling granular modeling of consumption patterns. It also provides users to see definitions of complexity levels based on the active product.
 
 ---
 
