@@ -93,7 +93,7 @@ npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculator
 ##### Calculator Pricing
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorepricing --org-url <your-org-url>
+npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorpricing --org-url <your-org-url>
 ```
 
 ##### Calculator Product
