@@ -290,26 +290,49 @@ export const EstimateSummary: React.FC<EstimateSummaryProps> = ({ estimateId, on
         }
       }
 
-      // Yearly tiers: only 1 unit each, compare against yearly credits needed
+      // Yearly tiers: multiple quantities allowed per tier
       const yearlyTiers = tiers
         .filter((rec) => rec.gbb_billing === 803430001)
         .sort((a, b) => b.gbb_credits - a.gbb_credits);
 
       if (yearlyTiers.length > 0) {
-        const maxSubsetSize = Math.min(yearlyTiers.length, 10);
-        for (let mask = 1; mask < (1 << maxSubsetSize); mask++) {
-          let totalYearlyCredits = 0;
+        // Try each single tier with multiple quantities
+        for (const tier of yearlyTiers) {
+          const qty = tier.gbb_credits > 0 ? Math.ceil(totalMax / tier.gbb_credits) : 1;
+          const cost = qty * tier.gbb_costperunit;
+          if (cost < bestCost) {
+            bestOption = [{ rec: tier, qty }];
+            bestCost = cost;
+          }
+        }
+
+        // Try greedy combinations: fill with largest tier first, then remainder with smaller
+        for (let startIdx = 0; startIdx < yearlyTiers.length - 1; startIdx++) {
+          let remaining = totalMax;
           let totalCost = 0;
           const combo: ProcurementOption = [];
-          for (let bit = 0; bit < maxSubsetSize; bit++) {
-            if (mask & (1 << bit)) {
-              const tier = yearlyTiers[bit];
-              totalYearlyCredits += tier.gbb_credits;
-              totalCost += tier.gbb_costperunit;
-              combo.push({ rec: tier, qty: 1 });
+          for (let i = startIdx; i < yearlyTiers.length && remaining > 0; i++) {
+            const tier = yearlyTiers[i];
+            const qty = Math.floor(remaining / tier.gbb_credits);
+            if (qty > 0) {
+              combo.push({ rec: tier, qty });
+              remaining -= qty * tier.gbb_credits;
+              totalCost += qty * tier.gbb_costperunit;
             }
           }
-          if (totalYearlyCredits >= totalMax && totalCost < bestCost) {
+          // Cover any remainder with the smallest tier that fits
+          if (remaining > 0) {
+            const smallestTier = yearlyTiers[yearlyTiers.length - 1];
+            const extraQty = Math.ceil(remaining / smallestTier.gbb_credits);
+            const existingEntry = combo.find(c => c.rec === smallestTier);
+            if (existingEntry) {
+              existingEntry.qty += extraQty;
+            } else {
+              combo.push({ rec: smallestTier, qty: extraQty });
+            }
+            totalCost += extraQty * smallestTier.gbb_costperunit;
+          }
+          if (combo.length > 0 && totalCost < bestCost) {
             bestOption = combo;
             bestCost = totalCost;
           }
