@@ -6,7 +6,11 @@
 
 - [Node.js LTS](https://nodejs.org/)
 - [Git](https://git-scm.com/)
-- Power Apps [npm CLI](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/npm-quickstart) (`npx power-apps`) installed and authenticated
+- Power Apps [CLI](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/reference/cli) installed globally:
+
+  ```bash
+  npm install --global @microsoft/power-apps-cli
+  ```
 
 ### Power Platform Environment
 
@@ -29,15 +33,21 @@ The app uses Dataverse security roles to control access to admin features. After
 
 ### Initialization
 
-For deployment option 2 you will use the `npx power-apps` commands to clone, initialize and deploy the code app.  If you are using deployment option 1, skip to the [Importing Template Data](#importing-template-data) section
+For deployment option 2, use the `pa` commands to initialize, run, and deploy the code app. If you are using deployment option 1, skip to the [Importing Template Data](#importing-template-data) section.
 
-The `npx power-apps` commands authenticate via your **default browser profile**. The first time you run any command, a browser window will open to process the authentication.
+Sign in through your system browser before initializing the app:
 
-> **Connecting to a different tenant?** If you need to authenticate with a tenant that doesn't match your default browser's signed-in account:
->
-> 1. Run `npx power-apps logout` to clear the current session.
-> 2. Set a different browser as your system default (e.g. Edge Beta) — one where only the target tenant credentials are signed in.
-> 3. Run any `npx power-apps` command again. Authentication will now open in the new default browser.
+```bash
+pa auth login
+```
+
+Use `pa auth status` to view the signed-in accounts and the active account. To work with another signed-in tenant account, run `pa auth switch` and select the account, or specify it directly:
+
+```bash
+pa auth switch --account user@contoso.com
+```
+
+Run `pa auth logout` only when you want to remove all saved sign-in information.
 
 Clone this project template and navigate to the folder
 
@@ -59,59 +69,59 @@ npm install
 Initialize the project as a Code App tied to your dataverse environment.  This will generate the power.config.json file tied to your environment:
 
 ```bash
-npx power-apps init --display-name "Copilot Credit Calculator" --environment-id <your environment id>
+pa app init --display-name "Copilot Credit Calculator" --environment-id <your-environment-id>
 ```
 
 #### Add Data Sources
 
-Run the following commands from the project root folder to add each Dataverse table.  When connecting to Dataverseyou will need your environment organization url (e.g. https://org***.crm.dynamics.com)
+Run the following commands from the project root folder to add each Dataverse table. You need your environment organization URL (for example, `https://org***.crm.dynamics.com`). The `--table` value is the Dataverse table's logical name.
 
 ##### Calculator Estimate
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorestimate --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorestimate --org-url <your-org-url>
 ```
 
 ##### Calculator Estimate Line
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorestimateline --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorestimateline --org-url <your-org-url>
 ```
 
 ##### Calculator Persona
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorpersona --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorpersona --org-url <your-org-url>
 ```
 
 ##### Calculator Persona Complexity
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorpersonacomplexity --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorpersonacomplexity --org-url <your-org-url>
 ```
 
 ##### Calculator Pricing
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorpricing --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorpricing --org-url <your-org-url>
 ```
 
 ##### Calculator Product
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorproduct --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorproduct --org-url <your-org-url>
 ```
 
 ##### Calculator Product Estimate
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorproductestimate --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorproductestimate --org-url <your-org-url>
 ```
 
 ##### Calculator Setting
 
 ```bash
-npx power-apps add-data-source --api-id dataverse --resource-name gbb_calculatorsetting --org-url <your-org-url>
+pa app add data-source --connector dataverse --table gbb_calculatorsetting --org-url <your-org-url>
 ```
 
 #### Add Dataverse Actions
@@ -123,7 +133,7 @@ Run the following command to register the dataverse actions
 `WhoAmI` is an unbound Dataverse action used to get the system user id for the running user
 
 ```bash
-npx power-apps add-dataverse-api --api-name WhoAmI
+pa app add dataverse-api --api-name WhoAmI
 ```
 
 ##### RetrieveUserPrivileges
@@ -131,15 +141,15 @@ npx power-apps add-dataverse-api --api-name WhoAmI
 `RetrieveUserPrivileges` is a bound Dataverse action to the `systemuser` table that returns all privileges for the user based on their user id
 
 ```bash
-npx power-apps add-dataverse-api --api-name RetrieveUserPrivileges
+pa app add dataverse-api --api-name RetrieveUserPrivileges
 ```
 
 ### Run Locally
 
-Start the development server
+Start the Power Apps local host:
 
 ```bash
-npm run dev
+pa app run
 ```
 
 This will provide the local play URL with live connections to your Power Platform environment.
@@ -159,7 +169,7 @@ This compiles TypeScript and bundles the app into the `dist` folder.
 When ready to deploy you can push the app to the managed host.
 
 ```bash
-npx power-apps push
+pa app push
 ```
 
 ## Importing Template Data

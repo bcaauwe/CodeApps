@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "appId": "75fe70f4-1825-4c07-95a2-45bf4a3d8dde",
+  "appDisplayName": "Yard Checkin",
+  "region": "prod",
+  "appType": "CodeApp",
+  "environmentId": "a8995412-eaba-ed8a-bb79-85561816011c",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}
