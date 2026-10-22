@@ -8,3 +8,4 @@ This repository contains projects related to [Power Apps Code Apps](https://lear
 | --- | --- |
 | [CodeApps-Template](CodeApps-Template/) | A demo template showcasing Code Apps with live data sources, including Office 365 integration, Dataverse CRUD operations, TMDB movie database via custom connectors, and a Copilot Studio agent panel. |
 | [CreditCalculator](CreditCalculator/) | A template for creating Copilot Credit estimates based on different products, personas, and personalized pricing — all saved and managed in Dataverse. |
+| [YardCheckin](YardCheckin/) | A tablet- and mobile-friendly equipment return check-in app with a Dataverse-backed return queue, QR/barcode scanning, photo and video capture, AI-powered condition photo analysis, hour meter and fuel receipt validation, and voice notes. |
