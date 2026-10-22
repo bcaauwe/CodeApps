@@ -15,6 +15,8 @@ Built with React, TypeScript, Vite, and Fluent UI React v9, the app uses a table
 
 ### Outstanding Returns
 
+![Outstanding returns and return booking queue](images/yardcheckin-01-home.png)
+
 The landing page displays active **Pending** and **Confirmed** return bookings, sorted by requested return time.
 
 - **Booking Context** - Shows the booking reference, linked rental agreement, and customer account.
@@ -25,6 +27,8 @@ The landing page displays active **Pending** and **Confirmed** return bookings, 
 ---
 
 ### Identify Equipment
+
+![Equipment identification, customer contact selection, and serial number validation](images/yardcheckin-02-identifyEquipment.png)
 
 The first step verifies that the equipment being returned matches the asset on the rental agreement.
 
@@ -39,7 +43,7 @@ The first step verifies that the equipment being returned matches the asset on t
 
 ### Walk-Around Capture
 
-![Yard Check-In walk-around capture](yardcheckin-asset-media-desktop.png)
+![Walk-around asset photo capture, preview carousel, and individual analysis summary](images/yardcheckin-03-walkAround-01.png)
 
 Capture inspection evidence while walking around the equipment:
 
@@ -50,6 +54,8 @@ Capture inspection evidence while walking around the equipment:
 - **Fuel Receipt** - Optionally photograph a fuel receipt and extract its amount, displayed in US currency format. The receipt image and result are saved as a Condition Photo.
 - **Condition Notes** - Dictate notes using browser speech recognition or enter and edit the transcript manually. A phone-recorded audio file can also be selected.
 
+![Consolidated photo analysis, hour meter and fuel receipt capture, and editable condition notes](images/yardcheckin-04-walkAround-02.png)
+
 Asset image analysis runs as photos are captured. Before proceeding to review, the app requires a meter reading and completed consolidated asset photo analysis; video alone does not satisfy the photo-analysis requirement.
 
 **Data connections:** Dataverse (Return Bookings, Condition Photos), Power Automate image-analysis and consolidation flows
@@ -58,12 +64,16 @@ Asset image analysis runs as photos are captured. Before proceeding to review, t
 
 ### Review & Confirm
 
+![Review of equipment details, consolidated condition findings, and analyzed asset photos](images/yardcheckin-05-confirmation-01.png)
+
 The review screen brings together the identified equipment, captured media, consolidated condition summary, meter reading, fuel amount, and condition notes.
 
 - **Overage Calculation** - Calculates excess hours against the agreement's contracted hours and applies its overage rate when available.
 - **Human Review** - Staff review the findings and can return to capture to make corrections before confirming.
 - **Customer Signature** - Requires a signature drawn with a finger, stylus, or mouse.
 - **Save & Verify** - Saves return hours, applicable overage charges, the selected contact, customer signature, and the reviewed voice-note transcript to the Return Booking. Sets the booking to **Arrived** and every related Condition Photo to **Submitted**, then reads the records back to verify the saved values and statuses.
+
+![Overage charges, voice-note transcript, check-in contact, and customer signature before confirmation](images/yardcheckin-06-confirmation-02.png)
 
 An online connection is required to confirm the return. Validation and save errors are shown in the app rather than treating an unsuccessful save as a completed check-in.
 
