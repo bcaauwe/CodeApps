@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "appId": "e159a2c2-fd27-4f97-b387-762218913b7e",
+  "appDisplayName": "Yard Checkin Mobile Diagnostic",
+  "region": "prod",
+  "appType": "CodeApp",
+  "environmentId": "a8995412-eaba-ed8a-bb79-85561816011c",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}

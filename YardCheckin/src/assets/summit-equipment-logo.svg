@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 210" role="img" aria-labelledby="title description">
+  <title id="title">Summit Equipment</title>
+  <desc id="description">Summit Equipment mountain logo with Rentals, Service, Solutions tagline</desc>
+  <path d="M22 84 126 28l70 39L294 4l133 86 82-47 89 58" fill="none" stroke="#ff5a1f" stroke-width="14" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M22 78 126 22l70 39L294 0l133 84 82-47 89 58" fill="none" stroke="#ed1c24" stroke-width="11" stroke-linecap="square" stroke-linejoin="miter"/>
+  <text x="20" y="157" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="76" font-weight="900" letter-spacing="-3">SUMMIT</text>
+  <text x="24" y="192" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="36" font-weight="900" letter-spacing="-1">EQUIPMENT</text>
+  <text x="318" y="190" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="2">RENTALS  |  SERVICE  |  SOLUTIONS</text>
+</svg>

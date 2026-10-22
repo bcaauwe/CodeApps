@@ -1,0 +1,131 @@
+{
+  "name": "Equipment Reimagined: Analyze Image",
+  "id": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+  "type": "Microsoft.PowerApps/apis",
+  "properties": {
+    "displayName": "Equipment Reimagined: Analyze Image",
+    "isCustom": false,
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "Equipment Reimagined: Analyze Image",
+        "version": "2015-02-01-preview"
+      },
+      "host": "unitedstates-002.azure-apim.net",
+      "schemes": [
+        "https"
+      ],
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "paths": {
+        "/{connectionId}/triggers/manual/run": {
+          "post": {
+            "operationId": "Run",
+            "description": "Runs a logic flow trigger.",
+            "parameters": [
+              {
+                "name": "connectionId",
+                "in": "path",
+                "required": true,
+                "type": "string",
+                "x-ms-visibility": "internal"
+              },
+              {
+                "name": "input",
+                "description": "The trigger's input",
+                "in": "body",
+                "required": true,
+                "schema": {
+                  "$ref": "#/definitions/ManualTriggerInput"
+                }
+              },
+              {
+                "name": "api-version",
+                "description": "The api version",
+                "in": "query",
+                "required": true,
+                "default": "2015-02-01-preview",
+                "x-ms-visibility": "internal",
+                "type": "string"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Ok",
+                "schema": {
+                  "$ref": "#/definitions/ResponseActionOutput"
+                }
+              },
+              "default": {
+                "description": "The Flow Response.",
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "definitions": {
+        "ManualTriggerInput": {
+          "type": "object",
+          "properties": {
+            "file": {
+              "description": "Select the image to analyze",
+              "title": "imageContent",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "contentBytes": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              },
+              "x-ms-content-hint": "FILE",
+              "x-ms-dynamically-added": true
+            },
+            "text": {
+              "description": "Enter the type of image",
+              "title": "imageType",
+              "type": "string",
+              "x-ms-content-hint": "TEXT",
+              "x-ms-dynamically-added": true,
+              "enum": [
+                "Asset",
+                "Meter",
+                "Receipt"
+              ]
+            }
+          },
+          "required": [
+            "file",
+            "text"
+          ]
+        },
+        "ResponseActionOutput": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "title": "result",
+              "x-ms-dynamically-added": true,
+              "type": "string"
+            },
+            "description": {
+              "title": "description",
+              "x-ms-dynamically-added": true,
+              "type": "string"
+            }
+          },
+          "additionalProperties": {}
+        }
+      },
+      "basePath": "/apim/logicflows"
+    }
+  }
+}
