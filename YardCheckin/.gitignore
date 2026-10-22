@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+## Playwright
+.playwright-mcp
 
 ## Code Apps paths
 .power
